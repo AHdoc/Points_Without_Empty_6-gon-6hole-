@@ -38,7 +38,6 @@ int nbvar,nbclauses,nbliterals;
 
 /* Variables */
 int idx[MAXN+1][MAXN+1][MAXN+1]; // idx[p][q][r]: The triangle pqr is oriented
-int idx2[MAXN+1][MAXN+1][MAXN+1][MAXN+1]; 
 int idx3[MAXN+1][MAXN+1][MAXN+1];
 int idx4[MAXN+1][MAXN+1][MAXN+1][MAXN+1]; 
 int idx5[MAXN+1][MAXN+1][MAXN+1][MAXN+1];
@@ -306,22 +305,21 @@ int var_triangle_not_intersect_obstable(int n,int p,int q,int r,vector<int> hull
 	define_var_and(x,cond);
 	return x;
 }
-// idx2[p][q][r][s]: s is inside the triangle pqr
 // idx3[p][q][r]   : the triangle pqr has no point inside nor intersection with the obstacle, i,e. is totally empty
 void var_pt_inside_triangle(int n,vector<int> hull){
 	for(int p=1;p<=n;p++)
 		for(int q=p+1;q<=n;q++)
 			for(int r=p+1;r<=n;r++){
+				if(q==r) continue; // To guarantee that p, q and r are distinct
+
 				vector<int> empty_cond;
 				for(int s=1;s<=n;s++){
 					set<int> pts={p,q,r,s};
-					if(pts.size()!=4) continue;
+					if(pts.size()!=4) continue; // To guarantee that p, q, r and s are distinct
 					
-					int x=new_var(); // x: s is inside triangle pqr
-					if(lvl[s]!=-1 && lvl[s]<=lvl[p] && lvl[s]<=lvl[q] && lvl[s]<=lvl[r]) new_known(-x);
-					
-					idx2[p][q][r][s]=idx2[q][r][p][s]=idx2[r][p][q][s]=x;
+					int x=new_var(); // x: the point [s] is inside the triangle pqr
 					define_var_and(x,{idx[p][q][s],idx[q][r][s],idx[r][p][s]});
+					if(lvl[s]!=-1 && lvl[s]<=lvl[p] && lvl[s]<=lvl[q] && lvl[s]<=lvl[r]) new_known(-x); // Pruning
 					
 					empty_cond.push_back(-x);
 				}
@@ -347,14 +345,15 @@ void var_4pt_region_nonempty(int n,vector<int> hull){
 			for(int r=1;r<=n;r++)
 				for(int s=1;s<=n;s++){
 					set<int> pts={p,q,r,s};
-					if(pts.size()!=4) continue;
+					if(pts.size()!=4) continue;  // To guarantee that p, q, r and s are distinct
 					
 					vector<int> nonempty_cond;
 					for(int t=1;t<=n;t++){
-						if(pts.find(t)!=pts.end()) continue;
+						if(pts.find(t)!=pts.end()) continue;  // To guarantee that p, q, r, s and t are distinct
 						
-						int x=new_var(); // point [t] is inside the 4-point region 
+						int x=new_var(); // x: the point [t] is inside the 4-point region pqrs 
 						define_var_and(x,{idx[p][q][t],idx[r][s][t],idx[p][s][t]});
+						
 						nonempty_cond.push_back(x);
 					}
 					int y=new_var();
