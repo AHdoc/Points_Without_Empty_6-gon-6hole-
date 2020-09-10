@@ -28,25 +28,29 @@ void dfs(int tot,int n,string s,bool smallest_hulls,bool hulls_with_obstacle){
 }
 
 int main(){
+/* 
 	freopen("n_sample.txt","w",stdout);
 	cnt=0;
 	for(int n=1;n<=16;n++){
 		dfs(n,n,"",false,true);
 	}
 	fclose(stdout);
-	
-	//freopen("n_le_24.txt","w",stdout);
-	//cnt=0;
-	//for(int n=1;n<=24;n++){
-	//	dfs(n,n,"",true,true);
-	//}
-	//fclose(stdout);
-	
-	//for(int n=24;n<=30;n++){
-	//	freopen(("n_"+to_string(n)+"_smallest_hulls.txt").c_str(),"w",stdout);
-	//	cnt=0;
-	//	dfs(n,n,"",true,false);
-	//	fclose(stdout);
-	//} 
+*/
+
+/* 
+	freopen("n_le_24.txt","w",stdout);
+	cnt=0;
+	for(int n=1;n<=24;n++){
+		dfs(n,n,"",true,true);
+	}
+	fclose(stdout);
+*/
+
+	for(int n=21;n<=30;n++){
+		freopen(("n_"+to_string(n)+"_smallest_hulls.txt").c_str(),"w",stdout);
+		cnt=0;
+		dfs(n,n,"",true,false);
+		fclose(stdout);
+	} 
 }
 
