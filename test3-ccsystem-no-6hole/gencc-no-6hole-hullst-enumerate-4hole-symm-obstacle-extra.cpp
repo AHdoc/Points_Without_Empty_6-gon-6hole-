@@ -142,10 +142,78 @@ void cc_system(int n,vector<int> hull,int kn){
 /* known information */
 	for(int i=1;i<=n;i++)
 		lvl[i]=-1;
+	int j_for_reflection=-1;
+	for(int j=0;j<hull.size();j++)
+		if(hull[j]==3)
+			j_for_reflection=j;
+	if(j_for_reflection==-1){
+		for(int j=0;j<hull.size();j++)
+			if(hull[j]==2)
+				j_for_reflection=j;
+	}
+	
 	for(int i=kn+1,i2,j=0;j<hull.size();i=i2,j++){ 
 		if(j>=1){
-			if(hull[j]>=3){
-				if(hull[j-1]<=7 && hull[j]==3 && (j+1==hull.size() || (j+2==hull.size() && (hull[j+1]==0 || hull[j+1]==1)))){
+			if(j!=j_for_reflection){
+				if(hull[j]>=2){
+					int p=i-2,q=i-1,x=i,y=i+1;
+					new_known(idx6[q][p][y][x]);
+				}else if(hull[j]==1){
+					if(hull[j-1]==4){ // Symmetry Breaking for Quadrilaterals
+						int p=i-4,q=i-3,r=i-2,s=i-1;
+						new_known(q,s,i);
+						new_known(r,p,i);
+					}else if(hull[j-1]==5){ // Symmetry Breaking for Pentagons
+						int p=i-5,q=i-4,r=i-3,s=i-2,t=i-1;
+						new_known(q,s,i);
+						new_known(s,p,i);
+						new_known(r,t,i);
+						new_clauses({idx[q][t][i],idx[p][r][i]}); 
+					}else if(hull[j-1]==6){ // Symmetry Breaking for Hexagons
+						int p=i-6,q=i-5,r=i-4,s=i-3,t=i-2,u=i-1;
+						new_known(q,t,i);
+						new_known(s,p,i);
+					}else if(hull[j-1]==7){ // Symmetry Breaking for Heptagons
+						int p=i-7,q=i-6,r=i-5,s=i-4,t=i-3,u=i-2,v=i-1;
+						new_known(q,t,i);
+						new_known(s,v,i);
+						new_known(u,p,i);
+						new_clauses({idx[q][v][i],idx[p][r][i]});
+						new_clauses({idx[q][u][i],idx[p][s][i]});
+					}else if(hull[j-1]==8){ // Symmetry Breaking for Octagons
+						int p=i-8,q=i-7,r=i-6,s=i-5,t=i-4,u=i-3,v=i-2,w=i-1;
+						new_known(q,t,i);
+						new_known(r,u,i);
+						new_known(s,v,i);
+						new_known(t,w,i);
+						new_known(u,p,i);
+						new_clauses({idx[q][v][i],idx[w][r][i]});
+						new_clauses({idx[q][u][i],idx[v][r][i]});
+					}
+				}
+			}else{
+				if(hull[j]==2){
+					if(hull[j-1]==3){
+						int p=i-3,q=i-2,r=i-1,x=i,y=i+1;
+						new_known(p,y,x); new_known(q,x,y);
+						new_known(r,x,y); new_known(p,y,x);
+					}else if(hull[j-1]==4){
+						int p=i-4,q=i-3,r=i-2,s=i-1,x=i,y=i+1;
+						int c1=new_var();
+						int c2=new_var();
+						define_var_and(c1,{idx[p][y][x],idx[q][x][y],idx[p][y][x],idx[s][x][y]});
+						define_var_and(c2,{idx[p][y][x],idx[q][x][y],idx[s][y][x],idx[r][x][y]});
+						new_clauses({c1,c2});
+					}else if(hull[j-1]==5){
+						int p=i-5,q=i-4,r=i-2,s=i-1,x=i,y=i+1;
+						new_known(p,y,x); new_known(q,x,y); new_known(s,y,x); new_known(r,x,y);
+					}else if(hull[j-1]==6){
+						int p=i-6,q=i-5,r=i-3,s=i-2,x=i,y=i+1;
+						new_known(p,y,x); new_known(q,x,y); new_known(s,y,x); new_known(r,x,y);
+					}else if(hull[j-1]==7 || hull[j-1]==8){
+						new_clauses({});
+					}
+				}else if(hull[j]==3){
 					if(hull[j-1]==3){
 						int p=i-3,q=i-2,r=i-1,x=i,y=i+1,z=i+2;
 						int c1=new_var();
@@ -210,63 +278,6 @@ void cc_system(int n,vector<int> hull,int kn){
 						}); // The only exception
 						new_clauses({c1,c2,c3});
 					}
-				}else{
-					int p=i-2,q=i-1,x=i,y=i+1;
-					new_known(p,y,x);
-					new_known(q,x,y);
-				}
-			}else if(hull[j]==2){
-				if(hull[j-1]==3){
-					int p=i-3,q=i-2,r=i-1,x=i,y=i+1;
-					new_known(p,y,x); new_known(q,x,y);
-					new_known(r,x,y); new_known(p,y,x);
-				}else if(hull[j-1]==4){
-					int p=i-4,q=i-3,r=i-2,s=i-1,x=i,y=i+1;
-					int c1=new_var();
-					int c2=new_var();
-					define_var_and(c1,{idx[p][y][x],idx[q][x][y],idx[p][y][x],idx[s][x][y]});
-					define_var_and(c2,{idx[p][y][x],idx[q][x][y],idx[s][y][x],idx[r][x][y]});
-					new_clauses({c1,c2});
-				}else if(hull[j-1]==5){
-					int p=i-5,q=i-4,r=i-2,s=i-1,x=i,y=i+1;
-					new_known(p,y,x); new_known(q,x,y); new_known(s,y,x); new_known(r,x,y);
-				}else if(hull[j-1]==6){
-					int p=i-6,q=i-5,r=i-3,s=i-2,x=i,y=i+1;
-					new_known(p,y,x); new_known(q,x,y); new_known(s,y,x); new_known(r,x,y);
-				}else if(hull[j-1]==7 || hull[j-1]==8){
-					new_clauses({});
-				}
-			}else if(hull[j]==1){
-				if(hull[j-1]==4){ // Symmetry Breaking for Quadrilaterals
-					int p=i-4,q=i-3,r=i-2,s=i-1;
-					new_known(q,s,i);
-					new_known(r,p,i);
-				}else if(hull[j-1]==5){ // Symmetry Breaking for Pentagons
-					int p=i-5,q=i-4,r=i-3,s=i-2,t=i-1;
-					new_known(q,s,i);
-					new_known(s,p,i);
-					new_known(r,t,i);
-					new_clauses({idx[q][t][i],idx[p][r][i]}); 
-				}else if(hull[j-1]==6){ // Symmetry Breaking for Hexagons
-					int p=i-6,q=i-5,r=i-4,s=i-3,t=i-2,u=i-1;
-					new_known(q,t,i);
-					new_known(s,p,i);
-				}else if(hull[j-1]==7){ // Symmetry Breaking for Heptagons
-					int p=i-7,q=i-6,r=i-5,s=i-4,t=i-3,u=i-2,v=i-1;
-					new_known(q,t,i);
-					new_known(s,v,i);
-					new_known(u,p,i);
-					new_clauses({idx[q][v][i],idx[p][r][i]});
-					new_clauses({idx[q][u][i],idx[p][s][i]});
-				}else if(hull[j-1]==8){ // Symmetry Breaking for Octagons
-					int p=i-8,q=i-7,r=i-6,s=i-5,t=i-4,u=i-3,v=i-2,w=i-1;
-					new_known(q,t,i);
-					new_known(r,u,i);
-					new_known(s,v,i);
-					new_known(t,w,i);
-					new_known(u,p,i);
-					new_clauses({idx[q][v][i],idx[w][r][i]});
-					new_clauses({idx[q][u][i],idx[v][r][i]});
 				}
 			}
 		}
