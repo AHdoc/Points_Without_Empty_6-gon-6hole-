@@ -95,6 +95,50 @@ void cc_system(int n,vector<int> hull,int kn){
 				idx[i][j][k]=idx[j][k][i]=idx[k][i][j]=x;
 				idx[i][k][j]=idx[j][i][k]=idx[k][j][i]=-x;
 			}
+	// Interiority: If tqr and ptr and pqt, then pqr.
+	for(int p=1;p<=n;p++)
+		for(int q=p+1;q<=n;q++)
+			for(int r=p+1;r<=n;r++)
+				for(int t=1;t<=n;t++){
+					set<int> pts={p,q,r,t};
+					if(pts.size()!=4) continue;
+					new_clauses({-idx[t][q][r],-idx[p][t][r],-idx[p][q][t],idx[p][q][r]});
+				}
+	// Transitivity: If tsp and tsq and tsr, and tpq and tqr, then tpr.
+	for(int p=1;p<=n;p++)
+		for(int q=1;q<=n;q++)
+			for(int r=1;r<=n;r++)
+				for(int s=1;s<=n;s++)
+					for(int t=1;t<=n;t++){
+						set<int> pts={p,q,r,s,t};
+						if(pts.size()!=5) continue;
+						new_clauses({-idx[t][s][p],-idx[t][s][q],-idx[t][s][r],-idx[t][p][q],-idx[t][q][r],idx[t][p][r]});
+					}
+// idx5[p][q][r][s]: pq and rs (along the counterclockwise order prqs) intersect
+	for(int p=1;p<=n;p++)
+		for(int q=1;q<=n;q++)
+			for(int r=1;r<=n;r++)
+				for(int s=1;s<=n;s++){
+					set<int> pts={p,q,r,s};
+					if(pts.size()!=4) continue;
+					int x=new_var();
+					idx5[p][q][r][s]=x;
+					define_var_and(x,{idx[p][q][s],idx[q][p][r],idx[r][s][p],idx[s][r][q]});
+				}
+// idx6[p][q][r][s]: pq and the left extension of rs intersect
+	for(int p=1;p<=n;p++)
+		for(int q=1;q<=n;q++)
+			for(int r=1;r<=n;r++)
+				for(int s=1;s<=n;s++){
+					set<int> pts={p,q,r,s};
+					if(pts.size()!=4) continue;
+					int x=new_var();
+					idx6[p][q][r][s]=x;
+					define_var_and(x,{idx[p][r][q],idx[p][s][q],idx[r][s][q],idx[s][r][p]});
+				}
+
+/* ----------------- */
+
 /* known information */
 	for(int i=1;i<=n;i++)
 		lvl[i]=-1;
@@ -106,44 +150,64 @@ void cc_system(int n,vector<int> hull,int kn){
 						int p=i-3,q=i-2,r=i-1,x=i,y=i+1,z=i+2;
 						int c1=new_var();
 						int c2=new_var();
-						define_var_and(c1,{idx[p][y][x],idx[q][x][y],idx[p][y][x],idx[r][x][y]});
-						define_var_and(c2,{idx[x][y][q],idx[y][x][r],idx[y][x][p],
-						                   idx[y][z][r],idx[z][y][p],idx[z][y][q],
-										   idx[z][x][p],idx[x][z][q],idx[x][z][r]});
+						define_var_and(c1,{idx6[q][p][y][x],idx6[p][r][x][y]}); // There exists an edge making 1 pt apart;
+						define_var_and(c2,{
+							idx6[q][p][y][x],idx6[r][q][x][y],
+							idx6[p][r][x][z],idx6[q][p][z][x],
+							idx6[p][r][y][z],idx6[r][q][z][y]
+						}); // The only exception.
 						new_clauses({c1,c2});
 					}else if(hull[j-1]==4){
 						int p=i-4,q=i-3,r=i-2,s=i-1,x=i,y=i+1;
 						int c1=new_var();
 						int c2=new_var();
-						define_var_and(c1,{idx[p][y][x],idx[q][x][y],idx[p][y][x],idx[s][x][y]});
-						define_var_and(c2,{idx[p][y][x],idx[q][x][y],idx[s][y][x],idx[r][x][y]});
+						define_var_and(c1,{idx6[q][p][y][x],idx6[p][s][x][y]}); // There exists an edge making 1 pt apart;
+						define_var_and(c2,{idx6[q][p][y][x],idx6[s][r][x][y]}); // There exists an edge making 2 pts apart;
 						new_clauses({c1,c2});
 					}else if(hull[j-1]==5){
-						int p=i-5,q=i-4,r=i-3,s=i-2,t=i-1,x=i,y=i+1;
+						int p=i-5,q=i-4,r=i-3,s=i-2,t=i-1,x=i,y=i+1,z=i+2;
 						int c1=new_var();
 						int c2=new_var();
 						int c3=new_var();
-						define_var_and(c1,{idx[p][y][x],idx[q][x][y],idx[p][y][x],idx[t][x][y]});
-						define_var_and(c2,{idx[p][y][x],idx[q][x][y],idx[t][y][x],idx[s][x][y]});
-						define_var_and(c3,{idx[p][y][x],idx[q][x][y],idx[s][y][x],idx[r][x][y]});
+						define_var_and(c1,{idx6[q][p][y][x],idx6[p][t][x][y]}); // There exists an edge making 1 pt apart;
+						define_var_and(c2,{idx6[q][p][y][x],idx6[t][s][x][y]}); // There exists an edge making 2 pts apart;
+						define_var_and(c3,{
+							idx6[q][p][y][x],idx6[s][r][x][y],
+							idx6[p][t][x][z],idx6[r][q][z][x],
+							idx6[p][t][y][z],idx6[s][r][z][y]
+						}); // The only exception.
 						new_clauses({c1,c2,c3});
 					}else if(hull[j-1]==6){
-						int p=i-6,q=i-5,r=i-4,s=i-3,t=i-2,u=i-1,x=i,y=i+1;
+						int p=i-6,q=i-5,r=i-4,s=i-3,t=i-2,u=i-1,x=i,y=i+1,z=i+2;
 						int c1=new_var();
 						int c2=new_var();
 						int c3=new_var();
-						define_var_and(c1,{idx[p][y][x],idx[q][x][y],idx[p][y][x],idx[u][x][y]});
-						define_var_and(c2,{idx[p][y][x],idx[q][x][y],idx[u][y][x],idx[t][x][y]});
-						define_var_and(c3,{idx[p][y][x],idx[q][x][y],idx[t][y][x],idx[s][x][y]});
-						new_clauses({c1,c2,c3});
+						int c4=new_var();
+						define_var_and(c1,{idx6[q][p][y][x],idx6[p][u][x][y]}); // There exists an edge making 1 pt apart;
+						define_var_and(c2,{idx6[q][p][y][x],idx6[u][t][x][y]}); // There exists an edge making 2 pts apart;
+						define_var_and(c3,{
+							idx6[q][p][y][x],idx6[t][s][x][y],
+							idx6[u][t][x][z],idx6[r][q][z][x],
+							idx6[p][u][y][z],idx6[s][r][z][y]
+						}); // The first exception
+						define_var_and(c4,{
+							idx6[q][p][y][x],idx6[t][s][x][y],
+							idx6[p][u][x][z],idx6[s][r][z][x],
+							idx6[p][u][y][z],idx6[s][r][z][y]
+						}); // The second exception
+						new_clauses({c1,c2,c3,c4});
 					}else if(hull[j-1]==7){
-						int p=i-7,q=i-6,r=i-5,s=i-4,t=i-3,u=i-2,v=i-1,x=i,y=i+1;
+						int p=i-7,q=i-6,r=i-5,s=i-4,t=i-3,u=i-2,v=i-1,x=i,y=i+1,z=i+2;
 						int c1=new_var();
 						int c2=new_var();
 						int c3=new_var();
-						define_var_and(c1,{idx[p][y][x],idx[q][x][y],idx[p][y][x],idx[v][x][y]});
-						define_var_and(c2,{idx[p][y][x],idx[q][x][y],idx[v][y][x],idx[u][x][y]});
-						define_var_and(c3,{idx[p][y][x],idx[q][x][y],idx[u][y][x],idx[t][x][y]});
+						define_var_and(c1,{idx6[q][p][y][x],idx6[p][v][x][y]}); // There exists an edge making 1 pt apart;
+						define_var_and(c2,{idx6[q][p][y][x],idx6[v][u][x][y]}); // There exists an edge making 2 pts apart;
+						define_var_and(c3,{
+							idx6[q][p][y][x],idx6[u][t][x][y],
+							idx6[v][u][x][z],idx6[s][r][z][x],
+							idx6[p][v][y][z],idx6[s][r][z][y]
+						}); // The only exception
 						new_clauses({c1,c2,c3});
 					}
 				}else{
@@ -240,49 +304,6 @@ void cc_system(int n,vector<int> hull,int kn){
 	//	}
 	//	new_clauses(tmp);
 	//}
-	
-/* ----------------- */
-	// Interiority: If tqr and ptr and pqt, then pqr.
-	for(int p=1;p<=n;p++)
-		for(int q=p+1;q<=n;q++)
-			for(int r=p+1;r<=n;r++)
-				for(int t=1;t<=n;t++){
-					set<int> pts={p,q,r,t};
-					if(pts.size()!=4) continue;
-					new_clauses({-idx[t][q][r],-idx[p][t][r],-idx[p][q][t],idx[p][q][r]});
-				}
-	// Transitivity: If tsp and tsq and tsr, and tpq and tqr, then tpr.
-	for(int p=1;p<=n;p++)
-		for(int q=1;q<=n;q++)
-			for(int r=1;r<=n;r++)
-				for(int s=1;s<=n;s++)
-					for(int t=1;t<=n;t++){
-						set<int> pts={p,q,r,s,t};
-						if(pts.size()!=5) continue;
-						new_clauses({-idx[t][s][p],-idx[t][s][q],-idx[t][s][r],-idx[t][p][q],-idx[t][q][r],idx[t][p][r]});
-					}
-// idx5[p][q][r][s]: pq and rs (along the counterclockwise order prqs) intersect
-	for(int p=1;p<=n;p++)
-		for(int q=1;q<=n;q++)
-			for(int r=1;r<=n;r++)
-				for(int s=1;s<=n;s++){
-					set<int> pts={p,q,r,s};
-					if(pts.size()!=4) continue;
-					int x=new_var();
-					idx5[p][q][r][s]=x;
-					define_var_and(x,{idx[p][q][s],idx[q][p][r],idx[r][s][p],idx[s][r][q]});
-				}
-// idx6[p][q][r][s]: pq and the left extension of rs intersect
-	for(int p=1;p<=n;p++)
-		for(int q=1;q<=n;q++)
-			for(int r=1;r<=n;r++)
-				for(int s=1;s<=n;s++){
-					set<int> pts={p,q,r,s};
-					if(pts.size()!=4) continue;
-					int x=new_var();
-					idx6[p][q][r][s]=x;
-					define_var_and(x,{idx[p][r][q],idx[p][s][q],idx[r][s][q],idx[s][r][p]});
-				}
 }
 
 int var_triangle_not_intersect_obstable(int n,int p,int q,int r,vector<int> hull){
