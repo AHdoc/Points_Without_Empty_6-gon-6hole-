@@ -19,7 +19,8 @@ def check(f_filename, g_filename):
         
         if chk:
             cnt[ord(s[0])-ord('0')] += 1
-            #print(s)
+            #if ord(s[0])-ord('0')==8:
+            #    print(s)
     
     for i in range(3,9):
         print(str(i)+':'+str(cnt[i]), end='   ')
