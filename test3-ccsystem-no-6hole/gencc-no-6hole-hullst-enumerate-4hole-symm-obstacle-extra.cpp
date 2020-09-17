@@ -143,14 +143,12 @@ void cc_system(int n,vector<int> hull,int kn){
 	for(int i=1;i<=n;i++)
 		lvl[i]=-1;
 	int j_for_reflection=-1;
-	for(int j=0;j<hull.size();j++)
-		if(hull[j]==3)
-			j_for_reflection=j;
-	if(j_for_reflection==-1){
-		for(int j=0;j<hull.size();j++)
-			if(hull[j]==2)
-				j_for_reflection=j;
-	}
+	if(hull.size()>=1 && (hull[hull.size()-1]==2 || hull[hull.size()-1]==3))
+		j_for_reflection=hull.size()-1;
+	if(hull.size()>=2 && (hull[hull.size()-1]==0 && (hull[hull.size()-2]==2 || hull[hull.size()-2]==3)))
+		j_for_reflection=hull.size()-2;
+	if(hull.size()>=3 && (hull[hull.size()-1]==0 && hull[hull.size()-2]==1 && hull[hull.size()-3]==3))
+		j_for_reflection=hull.size()-3;
 	
 	for(int i=kn+1,i2,j=0;j<hull.size();i=i2,j++){ 
 		if(j>=1){
