@@ -5,6 +5,7 @@
 #include<ctime>
 #include<random>
 #include<vector>
+#include<set>
 #include<algorithm>
 
 using namespace std;
@@ -114,6 +115,13 @@ Tpoint PointPicking_Triangle(vector<Tpoint> tri){
 	double a=Realnum_Inside01(),b=Realnum_Inside01();
 	if(a+b<1){
 		Tpoint ret {tri[0].x+a*(tri[1].x-tri[0].x)+b*(tri[2].x-tri[0].x),tri[0].y+a*(tri[1].y-tri[0].y)+b*(tri[2].y-tri[0].y)};
+		if(isnan(ret.x) || isnan(ret.y)){
+			cerr<<fixed<<"("<<tri[0].x<<","<<tri[0].y<<")\n";
+			cerr<<fixed<<"("<<tri[1].x<<","<<tri[1].y<<")\n";
+			cerr<<fixed<<"("<<tri[2].x<<","<<tri[2].y<<")\n";
+			cerr<<fixed<<"a="<<a<<"   b="<<b<<"\n";
+			exit(1);
+		}
 		return ret;
 	}else
 		return PointPicking_Triangle(tri);
@@ -132,7 +140,7 @@ Tpoint PointPicking_Polygon(vector<Tpoint> pol){
 const int MAXN=30;
 const double MAXR=1e5;
 
-int n;
+int n,achievement[MAXN+1];
 int idx[MAXN+1][MAXN+1][MAXN+1];
 bool var[MAXN*MAXN*MAXN+1];
 
@@ -141,7 +149,7 @@ bool query(int i,int j,int k){
 	else return (!var[-idx[i][j][k]]);
 }
 
-bool Solve(Tpoint A,Tpoint B,Tpoint C,Tpoint D,Tpoint P1,Tpoint P2){
+int Solve(Tpoint A,Tpoint B,Tpoint C,Tpoint D,Tpoint P1,Tpoint P2){
 	vector<Tpoint> pt;
 	pt.push_back(P1);
 	pt.push_back(P2);
@@ -158,14 +166,46 @@ bool Solve(Tpoint A,Tpoint B,Tpoint C,Tpoint D,Tpoint P1,Tpoint P2){
 				else
 					line.push_back(Tline(pt[k-1],pt[j-1]));
 		vector<Tpoint> res=HPI(line);
-		if(res.empty()) return false;
-		pt.push_back(PointPicking_Polygon(res));
+		if(res.size()<3)
+			return i-1;
+		
+		Tpoint newP=PointPicking_Polygon(res);
+		if(fabs(A.y-newP.y)<eps) return i-1;
+		if(fabs(B.y-newP.y)<eps) return i-1;
+		if(fabs(C.y-newP.y)<eps) return i-1;
+		if(fabs(D.y-newP.y)<eps) return i-1;
+		for(int j=1;j<i;j++)
+			if(fabs(pt[j-1].y-newP.y)<eps) return i-1;
+		for(int j=1;j<i;j++)
+			for(int k=j+1;k<i;k++)
+				if(fabs((pt[k-1]-pt[j-1])^(newP-pt[j-1]))<eps)
+					return i-1;
+		pt.push_back(newP);
 	}
 	
 	cout.precision(17);
 	for(int i=1;i<=n;i++)
-		cerr<<fixed<<"Point #"<<i<<": "<<pt[i-1].x<<" "<<pt[i-1].y<"\n";
-	return true;
+		cerr<<fixed<<"Point #"<<i<<": "<<pt[i-1].x<<" "<<pt[i-1].y<<"\n";
+	// Check
+	for(int i=1;i<=n;i++)
+		for(int j=1;j<=n;j++)
+			for(int k=1;k<=n;k++){
+				set<int> ijk={i,j,k};
+				if(ijk.size()!=3) continue;
+				double crossprod=(pt[j-1]-pt[i-1])^(pt[k-1]-pt[i-1]);
+				
+				if(crossprod>0 && query(i,j,k));
+				else if(crossprod<0 && (!query(i,j,k)));
+				else{
+					cerr<<fixed<<"point i = ("<<pt[i-1].x<<","<<pt[i-1].y<<")\n";
+					cerr<<fixed<<"point j = ("<<pt[j-1].x<<","<<pt[j-1].y<<")\n";
+					cerr<<fixed<<"point k = ("<<pt[k-1].x<<","<<pt[k-1].y<<")\n";
+					cerr<<fixed<<"crossprod = "<<crossprod<<"\n";
+					cerr<<"query(i,j,k) = "<<query(i,j,k)<<"\n";
+					exit(1);
+				}
+			}
+	return n;
 }
 
 void Realizer(){
@@ -179,7 +219,7 @@ void Realizer(){
 				idx[i][k][j]=idx[j][i][k]=idx[k][j][i]=-x;
 			}
 	int x;
-	while(cin>>x){
+	while(cin>>x && x!=0){
 		if(abs(x)<=tot){
 			if(x>0) var[x]=true;
 			else var[abs(x)]=false;
@@ -193,13 +233,24 @@ void Realizer(){
 	Tpoint P1(0,0);
 	Tpoint P2(100,1);
 	
+	for(int i=1;i<=30;i++) achievement[i]=0;
 	for(int i=1;;i++){
-		if(Solve(A,B,C,D,P1,P2)) break;
-		if(i%100==0) cerr<<"i = "<<i<<"\n";
+		int ret=Solve(A,B,C,D,P1,P2);
+		if(ret==n) break;
+		else ++achievement[ret];
+		if(i%1000000==0){
+			cerr<<"i = "<<i<<"     ";
+			for(int j=14;j<=30;j++){
+				if(achievement[j]==0) break;
+				cerr<<j<<":"<<achievement[j]<<" ";
+			}
+			cerr<<"\n";
+		}
 	}
 }
 
 int main(){
+	freopen("88510.out","r",stdin);
 	//HPI_test();
 	Realizer();
 }
