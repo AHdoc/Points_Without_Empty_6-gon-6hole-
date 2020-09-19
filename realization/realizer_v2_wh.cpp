@@ -82,7 +82,7 @@ namespace geo {
 	ll sqr(ll a){return a*a;}
 	ld sqr(ld a){return a*a;}
 	double sqr(double a){return a*a;}
-	const double eps=1e-10;
+	const double eps=1e-5;
 	int dcmp(double x) {
 		if (fabs(x)<eps) return 0; else return x<0 ? -1 : 1; 
 	}
@@ -404,7 +404,7 @@ void dfs(int i,int n,Tpoint A,Tpoint B,Tpoint C,Tpoint D,vector<Tpoint> pt){
 }
 
 void Realizer(){
-	freopen("88510.out","r",stdin);
+	freopen("10.in","r",stdin);
 	cin>>n;
 	int tot=0;
 	for(int i=1;i<=n;i++)
