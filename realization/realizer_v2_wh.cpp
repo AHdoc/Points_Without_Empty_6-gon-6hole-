@@ -41,7 +41,6 @@ struct Tline{
 };
 
 namespace geo {
-	
 	#define For(i,n) for(int i=1;i<=n;i++)
 	#define Fork(i,k,n) for(int i=k;i<=n;i++)
 	#define Rep(i,n) for(int i=0;i<n;i++)
@@ -82,7 +81,7 @@ namespace geo {
 	ll sqr(ll a){return a*a;}
 	ld sqr(ld a){return a*a;}
 	double sqr(double a){return a*a;}
-	const double eps=1e-5;
+	const double eps=0;
 	int dcmp(double x) {
 		if (fabs(x)<eps) return 0; else return x<0 ? -1 : 1; 
 	}
@@ -91,7 +90,6 @@ namespace geo {
 	public:
 		double x,y;
 		P(double x=0,double y=0):x(x),y(y){}
-		friend ld dis2(P A,P B){return sqr(A.x-B.x)+sqr(A.y-B.y);	}
 		friend ld Dot(P A,P B) {return A.x*B.x+A.y*B.y; }
 		friend ld Length(P A) {return sqrt(Dot(A,A)); }
 		friend ld Angle(P A,P B) {
@@ -117,55 +115,7 @@ namespace geo {
 	typedef P V;
 	
 	double Cross(V A,V B) {return A.x*B.y - A.y*B.x;}
-	double Area2(P A,P B,P C) {return Cross(B-A,C-A);}
-	V Rotate(V A,double rad) {
-		return V(A.x*cos(rad)-A.y*sin(rad),A.x*sin(rad)+A.y*cos(rad));
-	} 
-	// A 不是 0向量 
-	V Normal(V A) { 
-		double L = Length(A);
-		return V(-A.y/L , A.x/L); 
-	}
 	
-	P GetLineIntersection(P p,V v,P Q,V w){
-		V u = p-Q;
-		double t = Cross(w,u)/Cross(v,w);
-		return p+v*t;
-	}
-	P GetLineIntersectionB(P p,V v,P Q,V w){
-		return GetLineIntersection(p,v-p,Q,w-Q);
-	}
-	
-	double DistanceToLine(P p,P A,P B) {
-		V v1 = B-A, v2 = p-A;
-		return fabs(Cross(v1,v2))/Length(v1);
-	}
-	double DistanceToSegment(P p,P A,P B) {
-		if (A==B) return Length(p-A);
-		V v1 = B-A, v2 = p-A, v3 = p - B;
-		if (dcmp(Dot(v1,v2))<0) return Length(v2);
-		else if (dcmp(Dot(v1,v3))>0 ) return Length(v3);
-		else return fabs(Cross(v1,v2) ) / Length(v1);
-	}
-	P GetLineProjection(P p,P A,P B) {
-		V v=B-A;
-		return A+v*(Dot(v,p-A)/Dot(v,v));
-	}
-	//规范相交-线段相交且交点不在端点 
-	bool SegmentProperIntersection(P a1,P a2,P b1,P b2) { 
-		double  c1 = Cross(a2-a1,b1-a1) , c2 = Cross(a2-a1,b2-a1),
-				c3 = Cross(b2-b1,a1-b1) , c4 = Cross(b2-b1,a2-b1);
-		return dcmp(c1)*dcmp(c2)<0 && dcmp(c3)*dcmp(c4)<0;
-	}
-	//点在线段上（不包含端点） 
-	bool OnSegment(P p,P a1,P a2) {
-		return dcmp(Cross(a1-p,a2-p)) == 0 && dcmp(Dot(a1-p,a2-p))<0;
-	}
-	double PolygonArea(P *p,int n) {
-		double area=0;
-		For(i,n-2) area+=Cross(p[i]-p[0],p[i+1]-p[0]);
-		return area/2;
-	} 
 	struct Line{
 		P p;
 		V v;
@@ -182,7 +132,7 @@ namespace geo {
 	
 	//线上不算 
 	bool OnLeft(Line L,P p) {
-		return Cross(L.v,p-L.p)>0;
+		return Cross(L.v,p-L.p)>eps;
 	} 
 	P GetIntersection(Line a,Line b) {
 		V u=a.p-b.p;
