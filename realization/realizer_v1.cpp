@@ -10,9 +10,73 @@
 
 using namespace std;
 
-double eps=1e-9;
+namespace geo {
+	typedef long double ld;
+	
+	const double eps=1e-6;
+	const double maxr=1e6;
+	
+	class P{
+		public:
+			double x,y;
+			P(double x=0,double y=0):x(x),y(y){}
+			friend ld Dot(P A,P B) {return A.x*B.x+A.y*B.y; }
+			friend ld Length(P A) {return sqrt(Dot(A,A)); }
+			friend P operator- (P A,P B) { return P(A.x-B.x,A.y-B.y); }
+			friend P operator+ (P A,P B) { return P(A.x+B.x,A.y+B.y); }
+			friend P operator* (P A,double p) { return P(A.x*p,A.y*p); }
+	};
+	
+	typedef P V;
+	double Cross(V A,V B) {return A.x*B.y - A.y*B.x;}
+	
+	struct Line{
+		P p;
+		V v;
+		double ang;
+		Line(){}
+		Line(P p,V v):p(p),v(v) {ang=atan2(v.y,v.x); }
+		bool operator<(const Line & L) const {
+			return ang<L.ang;
+		}
+	};
+	
+	bool OnLeft(Line L,P p) {
+		return Cross(L.v,p-L.p)>eps*Length(L.v);
+	} 
+	P GetIntersection(Line a,Line b) {
+		V u=a.p-b.p;
+		double t = Cross(b.v,u) / Cross(a.v, b.v);
+		return a.p + a.v*t;
+	}
+	vector<P> HalfplaneIntersection(vector<Line> L) {
+		sort(L.begin(),L.end());
+		int n=L.size(),fi,la;
+		vector<P> p; p.resize(n);
+		vector<Line> q; q.resize(n);
+		q[fi=la=0]=L[0];
+		for(int i=1;i<=n-1;i++){
+			while(fi<la && !OnLeft(L[i],p[la-1])) --la;
+			while(fi<la && !OnLeft(L[i],p[fi])) ++fi;
+			q[++la]=L[i];
+			if(fabs(Cross(q[la].v, q[la-1].v))*maxr<eps*Length(q[la].v)*Length(q[la-1].v)){
+				--la;
+				if(OnLeft(q[la],L[i].p)) q[la]=L[i];
+			}
+			if (fi<la) p[la-1]=GetIntersection(q[la-1],q[la]);
+		}
+		while(fi<la && !OnLeft(q[fi],p[la-1])) --la;
+		vector<P> res;
+		if(la-fi<=1);
+		else{
+			p[la]=GetIntersection(q[la],q[fi]);
+			for(int i=fi;i<=la;i++) res.push_back(p[i]);
+		}
+		return res;
+	} 
+}
 
-default_random_engine gen;
+/**************************************************************/
 
 struct Tpoint{
 	double x,y;
@@ -22,6 +86,7 @@ struct Tpoint{
 	double operator ^(const Tpoint &b)const{return x*b.y-y*b.x;}
 	double operator *(const Tpoint &b)const{return x*b.x+y*b.y;}
 };
+double norm(Tpoint p){return sqrt(p.x*p.x+p.y*p.y);}
 
 struct Tline{
 	Tpoint s,e;
@@ -40,118 +105,49 @@ struct Tline{
 	}
 };
 
-double Area_Polygon(vector<Tpoint> pol){
-	double area;
-	for(int i=2;i<pol.size();i++) // Triangle (0,i-1,i)
-		area+=(pol[i-1]-pol[0])^(pol[i]-pol[0]);
-	return area;
-}
+double eps=1e-6;
 
-void Print_Q(vector<Tline> Q,int head,int tail){
-	cerr<<head<<"---"<<tail<<"   ";
-	for(int i=head;i<=tail;i++){
-		Tline l=Q[i];
-		cerr<<fixed<<"("<<l.s.x<<","<<l.s.y<<")-("<<l.e.x<<","<<l.e.y<<")   ";
-	} 
-	cerr<<"\n";
-}
+default_random_engine gen;
 
-vector<Tpoint> HPI(vector<Tline> _line){
-	sort(_line.begin(),_line.end(),[](Tline a,Tline b){return a.k<b.k;});
-	vector<Tline> line;
-	line.push_back(_line[0]);
-	for(int i=1;i<_line.size();i++)
-		if(fabs(_line[i].k-_line[i-1].k)>eps)
-			line.push_back(_line[i]);
-		else if(((line[line.size()-1].e-_line[i].s)^(_line[i].e-_line[i].s))>-eps){
-			line.pop_back();
-			line.push_back(_line[i]);
-		}
-	sort(line.begin(),line.end(),[](Tline a,Tline b){return a.k<b.k;});
+vector<Tpoint> HPI(vector<Tline> line){
+	int n=line.size();
+	vector<geo::Line> l;
+	for(int i=0;i<n;i++)
+		l.push_back(geo::Line(geo::P(line[i].s.x,line[i].s.y),geo::P(line[i].e.x-line[i].s.x,line[i].e.y-line[i].s.y)));
+	vector<geo::P> p=geo::HalfplaneIntersection(l);
 	
-	//for(Tline l:line) cout<<fixed<<l.k<<"   ("<<l.s.x<<","<<l.s.y<<")->("<<l.e.x<<","<<l.e.y<<")\n";
-	
-	int head=0,tail=1;
-	vector<Tline> Q;
-	Q.resize(line.size());
-	Q[0]=line[0];
-	Q[1]=line[1];
 	vector<Tpoint> res;
-	//cerr<<"---\n";
-	for(int i=2;i<line.size();i++){
-		if(fabs((Q[tail].e-Q[tail].s)^(Q[tail-1].e-Q[tail-1].s))<eps || fabs((Q[head].e-Q[head].s)^(Q[head+1].e-Q[head+1].s))<eps)
-			return res;
-		while(head<tail && (((Q[tail]&Q[tail-1])-line[i].s)^(line[i].e-line[i].s))>-eps)
-			--tail;
-		while(head<tail && (((Q[head]&Q[head+1])-line[i].s)^(line[i].e-line[i].s))>-eps)
-			++head;
-		Q[++tail]=line[i];
-		cerr<<"i = "<<i<<":";
-		cerr<<"      head, tail = "<<head<<", "<<tail<<"\n";
-	}
-	while(head<tail && (((Q[tail]&Q[tail-1])-Q[head].s)^(Q[head].e-Q[head].s))>-eps)
-		--tail;
-	//Print_Q(Q,head,tail);
-	if(tail<=head+1);
-	else{
-		for(int i=head;i<tail;i++)
-			res.push_back(Q[i]&Q[i+1]);
-		res.push_back(Q[head]&Q[tail]);
+	if(!p.empty()){
+		res.push_back(Tpoint(p[0].x,p[0].y));
+		for(int i=1;i<p.size();i++)
+			if(norm(res[res.size()-1]-Tpoint(p[i].x,p[i].y))>eps) res.push_back(Tpoint(p[i].x,p[i].y));
+		if(norm(res[0]-res[res.size()-1])<eps) res.pop_back();
+		if(res.size()<3) res.clear();
 	}
 	
-	double area=Area_Polygon(res);
-	
-	bool exist_nan=false;
-	for(Tpoint x:res)
-		if(isnan(x.x) || isnan(x.y))
-			exist_nan=true;
-	
-	if(area<-eps || exist_nan){
-		cout<<"_line:\n";
-		for(Tline QQ:_line)
-			cout<<fixed<<"("<<QQ.s.x<<","<<QQ.s.y<<") --- ("<<QQ.e.x<<","<<QQ.e.y<<")\n";
-		cout<<"line:\n";
-		for(Tline QQ:line)
-			cout<<fixed<<"("<<QQ.s.x<<","<<QQ.s.y<<") --- ("<<QQ.e.x<<","<<QQ.e.y<<")\n";
-		cout<<"Q[]:\n";
-		for(int i=head;i<=tail;i++)
-			cout<<fixed<<"("<<Q[i].s.x<<","<<Q[i].s.y<<") --- ("<<Q[i].e.x<<","<<Q[i].e.y<<")\n";
-		cout<<"res:\n";
-		for(Tpoint x:res)
-			cout<<fixed<<"("<<x.x<<","<<x.y<<") --- ";
-		cout<<"\n";
-		exit(1); 
+	double area=0.0,area_triangle;
+	for(int i=2;i<res.size();i++){ // Triangle (0,i-1,i)
+		area_triangle=((res[i-1]-res[0])^(res[i]-res[0]));
+		if(area_triangle<0){
+			cerr<<"A triangle of negative area "<<fixed<<area_triangle<<" appears in the polygon of an HPI problem.\n";
+			//cerr<<n<<"\nLines:\n";
+			//for(int j=0;j<n;j++) cerr<<"   "<<fixed<<line[j].s.x<<" "<<line[j].s.y<<" "<<line[j].e.x<<" "<<line[j].e.y<<"\n";
+			//cerr<<"Points:\n";
+			//for(int j=0;j<res.size();j++) cerr<<"   "<<fixed<<res[j].x<<" "<<res[j].y<<"\n";
+			//int j;
+			//j=0;	cerr<<fixed<<res[j].x<<" "<<res[j].y<<"\n";
+			//j=i-1;	cerr<<fixed<<res[j].x<<" "<<res[j].y<<"\n";
+			//j=i;	cerr<<fixed<<res[j].x<<" "<<res[j].y<<"\n";
+			//res.clear();
+			exit(1);
+		}
+		area+=area_triangle;
 	}
-	
+	if(!res.empty() && area<1e-3) cerr<<"area="<<area<<"\n"; 
 	return res;
 }
 
-void HPI_test(){
-	vector<Tline> line0={
-		Tline(Tpoint(0,0),Tpoint(1+0.01,0-0.01)),
-		Tline(Tpoint(1+0.01,0-0.01),Tpoint(1-0.01,1+0.01)),
-		Tline(Tpoint(1-0.01,1+0.01),Tpoint(0-0.01,1-0.01))};
-	vector<Tline> line1={
-		Tline(Tpoint(0,0),Tpoint(1+0.01,0-0.01)),
-		Tline(Tpoint(1+0.01,0-0.01),Tpoint(1-0.01,1+0.01)),
-		Tline(Tpoint(1-0.01,1+0.01),Tpoint(0-0.01,1-0.01)),
-		Tline(Tpoint(0-0.01,1-0.01),Tpoint(0,0))};
-	vector<Tline> line2={
-		Tline(Tpoint(-1,0),Tpoint(2,0)),
-		Tline(Tpoint(1,-1),Tpoint(1,2)),
-		Tline(Tpoint(2,1),Tpoint(-1,1)),
-		Tline(Tpoint(0,2),Tpoint(0,-1)),
-		Tline(Tpoint(0.5,1),Tpoint(0,0.5))};
-	for(Tpoint x:HPI(line2)){
-		cout<<fixed<<"("<<x.x<<","<<x.y<<")-";
-	}
-	cout<<"\n";
-}
-
-double Realnum_Inside01(){
-	int x=(rand()*32768+rand())%100;
-	return (double)(x+1)/101; 
-}
+double Realnum_Inside01(){return (double)(rand()+1)/32769;}
 
 int Weighted_Random(vector<double> weights){
 	discrete_distribution<int> dist(weights.begin(),weights.end());
@@ -160,32 +156,21 @@ int Weighted_Random(vector<double> weights){
 
 Tpoint PointPicking_Triangle(vector<Tpoint> tri){
 	double a=Realnum_Inside01(),b=Realnum_Inside01();
-	if(a+b<1){
-		Tpoint ret {tri[0].x+a*(tri[1].x-tri[0].x)+b*(tri[2].x-tri[0].x),tri[0].y+a*(tri[1].y-tri[0].y)+b*(tri[2].y-tri[0].y)};
-		if(isnan(ret.x) || isnan(ret.y)){
-			cerr<<fixed<<"("<<tri[0].x<<","<<tri[0].y<<")\n";
-			cerr<<fixed<<"("<<tri[1].x<<","<<tri[1].y<<")\n";
-			cerr<<fixed<<"("<<tri[2].x<<","<<tri[2].y<<")\n";
-			cerr<<fixed<<"a="<<a<<"   b="<<b<<"\n";
-			exit(1);
-		}
-		return ret;
-	}else
+	if(a+b<1)
+		return {tri[0].x+a*(tri[1].x-tri[0].x)+b*(tri[2].x-tri[0].x),tri[0].y+a*(tri[1].y-tri[0].y)+b*(tri[2].y-tri[0].y)};
+	else
 		return PointPicking_Triangle(tri);
 }
 
 Tpoint PointPicking_Polygon(vector<Tpoint> pol){
 	vector<double> areas;
-	for(int i=2;i<pol.size();i++) // Triangle (0,i-1,i)
-		areas.push_back((pol[i-1]-pol[0])^(pol[i]-pol[0]));
+	for(int i=2;i<pol.size();i++) areas.push_back((pol[i-1]-pol[0])^(pol[i]-pol[0])); // Triangle (0,i-1,i)
 	int j=2+Weighted_Random(areas);
 	return PointPicking_Triangle({pol[0],pol[j-1],pol[j]}); 
 }
 
-/**************************************************************/
-
 const int MAXN=30;
-const double MAXR=1e5;
+const double MAXR=1e6;
 
 int n,tot_achievement,achievement[MAXN+1];
 int idx[MAXN+1][MAXN+1][MAXN+1];
@@ -201,7 +186,7 @@ void dfs(int i,int n,Tpoint A,Tpoint B,Tpoint C,Tpoint D,vector<Tpoint> pt){
 	++achievement[i-1];
 	if(tot_achievement%1000000==0){
 		cerr<<"achieve = "<<tot_achievement<<"     ";
-		for(int j=1;j<=30;j++){
+		for(int j=2;j<=30;j++){
 			if(achievement[j]==0) break;
 			cerr<<j<<":"<<achievement[j]<<" ";
 		}
@@ -209,8 +194,7 @@ void dfs(int i,int n,Tpoint A,Tpoint B,Tpoint C,Tpoint D,vector<Tpoint> pt){
 	}
 	
 	if(i==n+1){
-		for(int i=1;i<=n;i++)
-			cerr<<fixed<<"Point #"<<i<<": Tpoint("<<pt[i-1].x<<","<<pt[i-1].y<<")\n";
+		for(int i=1;i<=n;i++) cerr<<fixed<<"Point #"<<i<<": Tpoint("<<pt[i-1].x<<","<<pt[i-1].y<<")\n";
 		// Check
 		for(int i=1;i<=n;i++)
 			for(int j=1;j<=n;j++)
@@ -218,7 +202,6 @@ void dfs(int i,int n,Tpoint A,Tpoint B,Tpoint C,Tpoint D,vector<Tpoint> pt){
 					set<int> ijk={i,j,k};
 					if(ijk.size()!=3) continue;
 					double crossprod=(pt[j-1]-pt[i-1])^(pt[k-1]-pt[i-1]);
-					
 					if(crossprod>0 && query(i,j,k));
 					else if(crossprod<0 && (!query(i,j,k)));
 					else{
@@ -233,43 +216,17 @@ void dfs(int i,int n,Tpoint A,Tpoint B,Tpoint C,Tpoint D,vector<Tpoint> pt){
 		exit(0);
 	}
 	
-	vector<Tline> line;
-	line.push_back(Tline(A,B));
-	line.push_back(Tline(B,C));
-	line.push_back(Tline(C,D));
-	line.push_back(Tline(D,A));
+	vector<Tline> line={Tline(A,B),Tline(B,C),Tline(C,D),Tline(D,A)};
 	for(int j=1;j<i;j++)
 		for(int k=j+1;k<i;k++)
-			if(query(j,k,i))
-				line.push_back(Tline(pt[j-1],pt[k-1]));
-			else
-				line.push_back(Tline(pt[k-1],pt[j-1]));
+			if(query(j,k,i)) line.push_back(Tline(pt[j-1],pt[k-1]));
+			else line.push_back(Tline(pt[k-1],pt[j-1]));
 	vector<Tpoint> res=HPI(line);
-	if(res.size()<3)
-		return;
-	double area=Area_Polygon(res);
-	
-	int oma=1;
-	if(i==9) oma=100;
-	if(i==11) oma=300;
-	if(i==13) oma=30;
-	for(int t=1;t<=oma;){
-		Tpoint newP=PointPicking_Polygon(res);
-		if(fabs(A.y-newP.y)<eps) continue;
-		if(fabs(B.y-newP.y)<eps) continue;
-		if(fabs(C.y-newP.y)<eps) continue;
-		if(fabs(D.y-newP.y)<eps) continue;
-		for(int j=1;j<i;j++)
-			if(fabs(pt[j-1].y-newP.y)<eps) continue;
-		for(int j=1;j<i;j++)
-			for(int k=j+1;k<i;k++)
-				if(fabs((pt[k-1]-pt[j-1])^(newP-pt[j-1]))<eps)
-					continue;
-		
+	if(res.size()<3) return;
+	for(int t=1;t<=((i==9 || i==11 || i==17)?100:1);t++){
 		vector<Tpoint> pt2=pt;
-		pt2.push_back(newP);
+		pt2.push_back(PointPicking_Polygon(res));
 		dfs(i+1,n,A,B,C,D,pt2);
-		++t;
 	}
 }
 
@@ -293,119 +250,13 @@ void Realizer(){
 	}
 	fclose(stdin);
 	
-	Tpoint A(-MAXR,-MAXR);
-	Tpoint B(MAXR,-MAXR+1);
-	Tpoint C(MAXR,MAXR+1);
-	Tpoint D(-MAXR,MAXR);
-	Tpoint P1(-MAXR+1,MAXR*0.1);
-	Tpoint P2(-MAXR+1,-MAXR*0.1);
-	
-	tot_achievement=0;
-	for(int i=1;i<=30;i++) achievement[i]=0; achievement[0]=1; achievement[1]=1; achievement[2]=1;
-	for(int i=1;;i++)
-		dfs(3,n,A,B,C,D,{P1,P2});
+	tot_achievement=0; for(int i=1;i<=30;i++) achievement[i]=0;
+	Tpoint A(-MAXR,-MAXR),B(MAXR,-MAXR),C(MAXR,MAXR),D(-MAXR,MAXR),P1(-MAXR+1,MAXR*0.1),P2(-MAXR+1,-MAXR*0.1);
+	for(int i=1;;i++) dfs(3,n,A,B,C,D,{P1,P2});
 }
 
 int main(){
-	cerr.precision(17);
-	cout.precision(17);
-	
-	//HPI_test();
-	//Realizer();
-	vector<Tline> line;
-	int m; cin>>m;
-	while(m--){
-		double u,v,w,x;
-		cin>>u>>v>>w>>x;
-		line.push_back(Tline(Tpoint(u,v),Tpoint(w,x)));
-	}
-	vector<Tpoint> res=HPI(line);
+	cerr.precision(17); cout.precision(17);
+	Realizer();
 }
-
-
-/*
-hullst: 88510
-
-	vector<Tpoint> pt={
-		Tpoint(-99999.00000000000000000,10000.00000000000000000),
-		Tpoint(-99999.00000000000000000,-10000.00000000000000000),
-		Tpoint(-6930.69306930692528113,12871.75247524752012396),
-		Tpoint(-7146.35820017645164626,53115.87199974375835154),
-		Tpoint(-28336.02431590079868329,72148.12528910698893014),
-		Tpoint(-36850.53627836801751982,73675.08070030220551416),
-		Tpoint(-77491.28025763612822630,66111.91715940831636544),
-		Tpoint(-85736.82115335357957520,52753.32605842949124053)};
-	//double minx=pt[0].x,maxx=pt[0].x,miny=pt[0].y,maxy=pt[0].y;
-	//for(Tpoint p:pt){
-	//	minx=fmin(minx,p.x); maxx=fmax(maxx,p.x);
-	//	miny=fmin(miny,p.y); maxy=fmax(maxy,p.y);
-	//}
-	//for(int i=0;i<pt.size();i++){
-	//	pt[i].x=-MAXR+2.0*MAXR*(pt[i].x-minx)/(maxx-minx);
-	//	pt[i].y=-MAXR+2.0*MAXR*(pt[i].y-miny)/(maxy-miny);
-	//}
-	for(int i=1;i<=pt.size();i++)
-		for(int j=1;j<=pt.size();j++)
-			for(int k=1;k<=pt.size();k++){
-				set<int> ijk={i,j,k};
-				if(ijk.size()!=3) continue;
-				double crossprod=(pt[j-1]-pt[i-1])^(pt[k-1]-pt[i-1]);
-				
-				if(crossprod>0 && query(i,j,k));
-				else if(crossprod<0 && (!query(i,j,k)));
-				else{
-					cerr<<fixed<<"point i = ("<<pt[i-1].x<<","<<pt[i-1].y<<")\n";
-					cerr<<fixed<<"point j = ("<<pt[j-1].x<<","<<pt[j-1].y<<")\n";
-					cerr<<fixed<<"point k = ("<<pt[k-1].x<<","<<pt[k-1].y<<")\n";
-					cerr<<fixed<<"crossprod = "<<crossprod<<"\n";
-					cerr<<"query(i,j,k) = "<<query(i,j,k)<<"\n";
-					exit(1);
-				}
-			}
-	vector<Tline> line;
-	line.push_back(Tline(A,B));
-	line.push_back(Tline(B,C));
-	line.push_back(Tline(C,D));
-	line.push_back(Tline(D,A));
-	for(int j=1;j<=pt.size();j++)
-		for(int k=j+1;k<=pt.size();k++)
-			if(query(j,k,pt.size()+1))
-				line.push_back(Tline(pt[j-1],pt[k-1]));
-			else
-				line.push_back(Tline(pt[k-1],pt[j-1]));
-	vector<Tpoint> res=HPI(line);
-
-31
-100000.00000000000000000 100001.00000000000000000   -100000.00000000000000000 100000.00000000000000000
--54003.73933928046608344 78655.26380121997499373   -89069.43311032406927552 75716.10229214336141013
--54003.73933928046608344 78655.26380121997499373   -96319.73985892097698525 74466.80671455914853141
--89069.43311032406927552 75716.10229214336141013   -96319.73985892097698525 74466.80671455914853141
--8910.34653465346491430 68317.28713143564527854   -99598.28849948644347023 42301.46838453289092286
--54003.73933928046608344 78655.26380121997499373   -99598.28849948644347023 42301.46838453289092286
--54003.73933928046608344 78655.26380121997499373   -99999.00000000000000000 10000.00000000000000000
--89069.43311032406927552 75716.10229214336141013   -99598.28849948644347023 42301.46838453289092286
--89069.43311032406927552 75716.10229214336141013   -99999.00000000000000000 10000.00000000000000000
--89069.43311032406927552 75716.10229214336141013   -99999.00000000000000000 -10000.00000000000000000
--96319.73985892097698525 74466.80671455914853141   -99598.28849948644347023 42301.46838453289092286
--96319.73985892097698525 74466.80671455914853141   -99999.00000000000000000 10000.00000000000000000
--96319.73985892097698525 74466.80671455914853141   -99999.00000000000000000 -10000.00000000000000000
--99999.00000000000000000 10000.00000000000000000   -99999.00000000000000000 -10000.00000000000000000
--96319.73985892097698525 74466.80671455914853141   -90098.05940594059939031 -42574.20791603962425143
--99999.00000000000000000 10000.00000000000000000   -90098.05940594059939031 -42574.20791603962425143
--99999.00000000000000000 -10000.00000000000000000   -90098.05940594059939031 -42574.20791603962425143
--100000.00000000000000000 -100000.00000000000000000   100000.00000000000000000 -99999.00000000000000000
--99999.00000000000000000 10000.00000000000000000   -8910.34653465346491430 68317.28713143564527854
--99999.00000000000000000 -10000.00000000000000000   -8910.34653465346491430 68317.28713143564527854
--90098.05940594059939031 -42574.20791603962425143   -8910.34653465346491430 68317.28713143564527854
--99999.00000000000000000 -10000.00000000000000000   -54003.73933928046608344 78655.26380121997499373
--90098.05940594059939031 -42574.20791603962425143   -54003.73933928046608344 78655.26380121997499373
--99999.00000000000000000 10000.00000000000000000   -99598.28849948644347023 42301.46838453289092286
--90098.05940594059939031 -42574.20791603962425143   -89069.43311032406927552 75716.10229214336141013
--99999.00000000000000000 -10000.00000000000000000   -99598.28849948644347023 42301.46838453289092286
-100000.00000000000000000 -99999.00000000000000000   100000.00000000000000000 100001.00000000000000000
--90098.05940594059939031 -42574.20791603962425143   -99598.28849948644347023 42301.46838453289092286
--8910.34653465346491430 68317.28713143564527854   -54003.73933928046608344 78655.26380121997499373
--8910.34653465346491430 68317.28713143564527854   -89069.43311032406927552 75716.10229214336141013
--8910.34653465346491430 68317.28713143564527854   -96319.73985892097698525 74466.80671455914853141
-*/
 
