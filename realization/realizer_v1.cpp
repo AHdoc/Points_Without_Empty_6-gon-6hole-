@@ -130,20 +130,20 @@ vector<Tpoint> HPI(vector<Tline> line){
 		area_triangle=((res[i-1]-res[0])^(res[i]-res[0]));
 		if(area_triangle<0){
 			cerr<<"A triangle of negative area "<<fixed<<area_triangle<<" appears in the polygon of an HPI problem.\n";
-			//cerr<<n<<"\nLines:\n";
-			//for(int j=0;j<n;j++) cerr<<"   "<<fixed<<line[j].s.x<<" "<<line[j].s.y<<" "<<line[j].e.x<<" "<<line[j].e.y<<"\n";
-			//cerr<<"Points:\n";
-			//for(int j=0;j<res.size();j++) cerr<<"   "<<fixed<<res[j].x<<" "<<res[j].y<<"\n";
-			//int j;
-			//j=0;	cerr<<fixed<<res[j].x<<" "<<res[j].y<<"\n";
-			//j=i-1;	cerr<<fixed<<res[j].x<<" "<<res[j].y<<"\n";
-			//j=i;	cerr<<fixed<<res[j].x<<" "<<res[j].y<<"\n";
-			//res.clear();
+			cerr<<n<<"\nLines:\n";
+			for(int j=0;j<n;j++) cerr<<"   "<<fixed<<line[j].s.x<<" "<<line[j].s.y<<" "<<line[j].e.x<<" "<<line[j].e.y<<"\n";
+			cerr<<"Points:\n";
+			for(int j=0;j<res.size();j++) cerr<<"   "<<fixed<<res[j].x<<" "<<res[j].y<<"\n";
+			int j;
+			j=0;	cerr<<fixed<<res[j].x<<" "<<res[j].y<<"\n";
+			j=i-1;	cerr<<fixed<<res[j].x<<" "<<res[j].y<<"\n";
+			j=i;	cerr<<fixed<<res[j].x<<" "<<res[j].y<<"\n";
+			res.clear();
 			exit(1);
 		}
 		area+=area_triangle;
 	}
-	if(!res.empty() && area<1e-3) cerr<<"area="<<area<<"\n"; 
+	//if(!res.empty() && area<eps) cerr<<"A super small polygon appears with the area="<<area<<".\n"; 
 	return res;
 }
 
@@ -173,20 +173,22 @@ const int MAXN=30;
 const double MAXR=1e6;
 
 int n,tot_achievement,achievement[MAXN+1];
-int idx[MAXN+1][MAXN+1][MAXN+1];
+double radius[MAXN+1];
+int id[MAXN+1],idx[MAXN+1][MAXN+1][MAXN+1];
 bool var[MAXN*MAXN*MAXN+1];
 
-bool query(int i,int j,int k){
+bool query(int _i,int _j,int _k){
+	int i=id[_i],j=id[_j],k=id[_k];
 	if(idx[i][j][k]>0) return var[idx[i][j][k]];
 	else return (!var[-idx[i][j][k]]);
 }
 
-void dfs(int i,int n,Tpoint A,Tpoint B,Tpoint C,Tpoint D,vector<Tpoint> pt){
+void dfs(int i,vector<Tpoint> pt){
 	++tot_achievement;
 	++achievement[i-1];
 	if(tot_achievement%1000000==0){
 		cerr<<"achieve = "<<tot_achievement<<"     ";
-		for(int j=2;j<=30;j++){
+		for(int j=10;j<=30;j++){
 			if(achievement[j]==0) break;
 			cerr<<j<<":"<<achievement[j]<<" ";
 		}
@@ -216,6 +218,7 @@ void dfs(int i,int n,Tpoint A,Tpoint B,Tpoint C,Tpoint D,vector<Tpoint> pt){
 		exit(0);
 	}
 	
+	Tpoint A(-radius[i],-radius[i]),B(radius[i],-radius[i]),C(radius[i],radius[i]),D(-radius[i],radius[i]);
 	vector<Tline> line={Tline(A,B),Tline(B,C),Tline(C,D),Tline(D,A)};
 	for(int j=1;j<i;j++)
 		for(int k=j+1;k<i;k++)
@@ -223,16 +226,25 @@ void dfs(int i,int n,Tpoint A,Tpoint B,Tpoint C,Tpoint D,vector<Tpoint> pt){
 			else line.push_back(Tline(pt[k-1],pt[j-1]));
 	vector<Tpoint> res=HPI(line);
 	if(res.size()<3) return;
-	for(int t=1;t<=((i==9 || i==11 || i==17)?100:1);t++){
+	for(int t=1;t<=2;t++){
 		vector<Tpoint> pt2=pt;
 		pt2.push_back(PointPicking_Polygon(res));
-		dfs(i+1,n,A,B,C,D,pt2);
+		dfs(i+1,pt2);
 	}
 }
 
-void Realizer(){
-	freopen("88510.out","r",stdin);
+void Realizer(string pat){
+	freopen((pat+".txt").c_str(),"r",stdin);
 	cin>>n;
+	for(int i=1;i<=n;i++) radius[i]=MAXR;
+	//double radius0=MAXR;
+	//for(int i=0,j=n,k;i<pat.size();i++,j=k){
+	//	k=j-pat[i]-'0';
+	//	for(int l=j;l>k;l--) radius[l]=radius0;
+	//	radius0=sqrt(radius0);
+	//}
+	for(int i=1;i<=n;i++) id[i]=n+1-i;
+	
 	int tot=0;
 	for(int i=1;i<=n;i++)
 		for(int j=i+1;j<=n;j++)
@@ -251,12 +263,13 @@ void Realizer(){
 	fclose(stdin);
 	
 	tot_achievement=0; for(int i=1;i<=30;i++) achievement[i]=0;
-	Tpoint A(-MAXR,-MAXR),B(MAXR,-MAXR),C(MAXR,MAXR),D(-MAXR,MAXR),P1(-MAXR+1,MAXR*0.1),P2(-MAXR+1,-MAXR*0.1);
-	for(int i=1;;i++) dfs(3,n,A,B,C,D,{P1,P2});
+	Tpoint P1(0,0); 
+	for(int i=1;;i++) dfs(2,{P1});
 }
 
 int main(){
 	cerr.precision(17); cout.precision(17);
-	Realizer();
+	//Realizer("8730");
+	Realizer("3477710");
 }
 
