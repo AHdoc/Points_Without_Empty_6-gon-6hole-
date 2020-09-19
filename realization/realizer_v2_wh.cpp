@@ -206,11 +206,17 @@ namespace geo {
 			if (fi<la) p[la-1] = GetIntersection(q[la-1],q[la]);
 		}
 		while(fi < la && !OnLeft(q[fi],p[la-1])) la--;
-		if (la-fi<=1) return 0; 
+		if (la-fi<=1) {
+			delete[] p;
+			delete[] q;
+			return 0;
+		} 
 		p[la] = GetIntersection(q[la],q[fi]);
 		
 		int m=0;
 		Fork(i,fi,la) poly[m++]=p[i];
+		delete[] p;
+		delete[] q;
 		return m;
 	} 
 }
