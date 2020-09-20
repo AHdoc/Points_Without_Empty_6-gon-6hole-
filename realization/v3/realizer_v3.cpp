@@ -78,8 +78,12 @@ void dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i a
 	}
 	
 	for(int t=1;t<=100;t++){
-		pair<LL,LL> p={random(-radius[i],radius[i]),random(-radius[i],radius[i])};
-		bool chk=check(i,ii,pt,p);
+		pair<LL,LL> p={random(-radius[i],radius[i]),random(-radius[i],radius[i])}; 
+		if(check(i,ii,pt,p)){
+			vector<pair<LL,LL>> pt2=pt;
+			pt2.push_back(p);
+			dfs(i+1,lvl[i]==lvl[i+1]?ii:i+1,pt2);
+		}
 	}
 }
 
