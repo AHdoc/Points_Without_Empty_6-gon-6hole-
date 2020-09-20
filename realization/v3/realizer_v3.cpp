@@ -191,9 +191,9 @@ void check_no6hole(vector<pair<LL,LL>> pt){ // Check whether or not the given se
 
 void dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are of the same level
 	++tot_achievement; ++achievement[i-1];
-	if(tot_achievement%10000==0){
+	if(tot_achievement%100000==0){
 		cerr<<"achieve = "<<tot_achievement<<"     ";
-		for(int j=10;j<=30;j++){
+		for(int j=1;j<=30;j++){
 			if(achievement[j]==0) break;
 			cerr<<j<<":"<<achievement[j]<<" ";
 		}
@@ -235,11 +235,11 @@ void Realizer(string pat){
 	cerr<<"lvl[0]="<<lvl[0]<<"   lvl[n+1]="<<lvl[n+1]<<"\n";
 	
 	tot_achievement=0; for(int i=1;i<=30;i++) achievement[i]=0;
-	//for(;;) dfs(2,lvl[1]==lvl[2]?1:2,{{0LL,0LL}}); // must fix the kernel point
-	for(;;) dfs(4,lvl[3]==lvl[4]?1:4,{{-5LL,-5LL},{5LL,-5LL},{0LL,5LL}});
+	for(;;) dfs(2,lvl[1]==lvl[2]?1:2,{{0LL,0LL}}); // must fix the kernel point
 }
 
 int main(){
+	//Realizer("333330");
 	Realizer("3333330");
 	//Realizer("8730");
 	//Realizer("88510");
