@@ -12,6 +12,8 @@ using namespace std;
 
 typedef long long LL;
 
+LL absLL(LL x){return (x<0?-x:x);}
+LL gcd(LL a,LL b){return (b==0?a:gcd(b,a%b));}
 LL random(LL a,LL b){
 	assert(a<=b);
 	LL x=rand()*32768;
@@ -24,14 +26,42 @@ LL random(LL a,LL b){
 
 const int MAXN=30;
 
-#define x first
-#define y second
-
 int n;
 LL tot_achievement,achievement[MAXN+1];
 LL radius[MAXN+1],lvl[MAXN+2];
 
-void dfs(int i,vector<pair<LL,LL>> pt){
+#define x first
+#define y second
+
+bool on_the_left(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return (b.x-a.x)*(c.y-a.y)-(c.x-a.x)*(b.y-a.y)>0;}
+
+bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){}
+
+bool check(int i,int ii,vector<pair<LL,LL>> pt,pair<LL,LL> p){
+	set<pair<LL,LL>> ang;
+	for(int j=1;j<i;j++){
+		LL x=pt[j-1].x-p.x,y=pt[j-1].y-p.y;
+		if(x==0 || y==0) return false;
+		LL g=gcd(absLL(x),absLL(y)); x/=g; y/=g;
+		if(x<0){x=-x; y=-y;}
+		else if(x==0) y=-y;
+		ang.insert({x,y}); 
+	}
+	if(ang.size()!=i-1) return false;
+	if(lvl[i]==lvl[i-1]+1){
+		for(int j=1;j<i;j++)
+			if(p.x<=pt[j-1].x) return false;
+	}else if(lvl[i]+1==lvl[i+1]){
+		for(int j=1;j<i;j++)
+			if((j!=i-1 && !on_the_left(p,pt[j-1],pt[i-2])) || (j!=ii && !on_the_left(p,pt[ii-1],pt[j-1]))) return false;
+	}else{
+		for(int j=1;j<i;j++)
+			if(j!=i-1 && !on_the_left(p,pt[j-1],pt[i-2])) return false;
+	}
+	return find6hole(pt,p);
+}
+
+void dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are of the same level
 	++tot_achievement; ++achievement[i-1];
 	if(tot_achievement%1000000==0){
 		cerr<<"achieve = "<<tot_achievement<<"     ";
@@ -47,7 +77,10 @@ void dfs(int i,vector<pair<LL,LL>> pt){
 		exit(0);
 	}
 	
-	
+	for(int t=1;t<=100;t++){
+		pair<LL,LL> p={random(-radius[i],radius[i]),random(-radius[i],radius[i])};
+		bool chk=check(i,ii,pt,p);
+	}
 }
 
 void Realizer(string pat){
@@ -68,7 +101,7 @@ void Realizer(string pat){
 	cerr<<"lvl[0]="<<lvl[0]<<"   lvl[n+1]="<<lvl[n+1]<<"\n";
 	
 	tot_achievement=0; for(int i=1;i<=30;i++) achievement[i]=0;
-	for(;;) dfs(2,{{0LL,0LL}});
+	for(;;) dfs(2,lvl[1]==lvl[2]?1:2,{{0LL,0LL}}); // must fix the kernel point
 }
 
 int main(){
