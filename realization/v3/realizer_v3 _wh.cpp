@@ -132,6 +132,9 @@ namespace geo{
 	bool OnLeft(Line L,P p) {
 		return Cross(L.v,p-L.p)>0;
 	} 
+	bool OnRight(Line L,P p) {
+		return Cross(L.v,p-L.p)<0;
+	} 
 	
 }
 
@@ -167,10 +170,49 @@ void treat(geo::P p,vector<geo::P> vp, vector<int> &i, vector<int> &o) {
 			l--;
 		}
 	}	
-}
+} 
 void maxchain(vector<geo::P> &vp, vector<vector<int> > &vg,vector<vector<int> > &rG){
-	for(int i=n-1;i>=1;i--) treat(vp[i],vp,rG[i],vg[i]);
+	for(int i=n-2;i>=0;i--) treat(vp[i],vp,rG[i],vg[i]);
 }
+
+void treat2(geo::P p,vector<geo::P> vp, vector<int> &i, vector<int> &o, vector<int> &L) {
+	int imax=SI(i),omax=SI(o);
+	vector<int> so=o;
+	sort(ALL(so),cmp2);
+	Rep(i,omax) {
+		if(L[o[j]]>=r-2 ){
+			C[o[j]]=
+		}else {
+			
+		}
+	}
+	int m=1,om=omax;
+	For(j,imax) {
+		while(m<=omax && geo::OnRight(vp[i[j]],p,vp[o[m]]) ) ){
+			
+			om--;m++;
+		}
+		for (auto ch:C[i[j]]) {
+			int t=1,l=SI(ch);
+			while(t<=om&&L[o2[t]]>=r-2-l){
+				ch.pb(o2[t]);
+				if(l==r-3) {
+					report(ch);
+					else {
+						C[o2[t]].pb(ch);
+					}
+				}
+				++t;
+			}
+		}
+	}	
+} 
+void chain(vector<geo::P> &vp, vector<vector<int> > &vg,vector<vector<int> > &rG,vector<int> &L){
+	for(int i=n-2;i>=0;i--) treat2(vp[i],vp,rG[i],vg[i],L);
+}
+
+
+
 bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
 	vector<geo::P> vp;
 	for(auto p:pt) {
@@ -187,7 +229,8 @@ bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
 		proceed(i,i+1,vp,q,vg);
 	}
 	vector<vector<int> > rG=get_reverese_graph(vg);
-	maxchain(vp,vg,rG);
+	 L;
+	maxchain(vp,vg,rG,L);
 }
 
 
