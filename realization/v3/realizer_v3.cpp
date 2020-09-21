@@ -6,12 +6,85 @@
 #include<random>
 #include<vector>
 #include<set>
-#include<algorithm>
 #include<queue>
+#include<algorithm>
 #include<assert.h>
 using namespace std;
 
+namespace ahdoc{
+	typedef long long LL;
+	
+	#define x first
+	#define y second
+	#define c1 first.first
+	#define c2 first.second
+	#define c3 second
+	#define MP3(a,b,c) make_pair(make_pair(a,b),c)
+	
+	bool on_the_left(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return (b.x-a.x)*(c.y-a.y)-(c.x-a.x)*(b.y-a.y)>0;}
+	
+	vector<pair<LL,LL>> pt;
+	vector<queue<pair<pair<int,int>,int>>> Q;
+	vector<pair<pair<int,int>,int>> C;
+	
+	bool proceed(int i,int j){
+		//cerr<<">   i="<<i<<"   j="<<j<<"\n";
+		while(!Q[i].empty() && on_the_left(pt[Q[i].front().c1],pt[i],pt[j])){
+			if(proceed(Q[i].front().c1,j)) return true;
+			auto tmp=Q[i].front();
+			if(tmp.c1>C[i].c1) C[i].c1=tmp.c1;
+			if(tmp.c2>C[i].c2) C[i].c2=tmp.c2;
+			if(tmp.c3>C[i].c3) C[i].c3=tmp.c3;
+			Q[i].pop();
+		}
+		if(C[i].c3!=-1 && on_the_left(pt[C[i].c3],pt[j],make_pair(0LL,0LL))) return true;
+		Q[j].push(MP3(i,C[i].c1,C[i].c2));
+		//cerr<<"<   i="<<i<<"   j="<<j<<"\n";
+		//for(int k=0;k<pt.size();k++){
+		//	cerr<<"       Q["<<k<<"]={ ";
+		//	for(auto x:Q[k]) cerr<<"("<<x.c1<<","<<x.c2<<","<<x.c3<<") ";
+		//	cerr<<"}\n";
+		//	cerr<<"       C["<<k<<"]=("<<C[k].c1<<","<<C[k].c2<<","<<C[k].c3<<")\n";
+		//}
+		return false;
+	}
+	
+	bool solve(vector<pair<LL,LL>> _pt){
+		pt=_pt;
+		int n=pt.size();
+		//cerr<<"n="<<n<<"\n";
+		//for(int i=0;i<n;i++) cerr<<"   "<<i<<": ("<<pt[i].x<<","<<pt[i].y<<")\n";
+		Q.clear(); C.clear(); Q.resize(n); C.resize(n);
+		for(int i=0;i<n;i++)
+			C[i].c1=C[i].c2=C[i].c3=-1;
+		for(int i=0;i+1<n;i++)
+			if(proceed(i,i+1))
+				return true;
+		return false; 
+	}
+	
+	bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
+		int n=pt.size();
+		for(int i=0;i<n;i++){
+			pt[i].x-=p.x;
+			pt[i].y-=p.y;
+		}
+		sort(pt.begin(),pt.end(),[](pair<LL,LL> p1,pair<LL,LL> p2){return atan2(p1.y,p1.x)<atan2(p2.y,p2.x);});
+		if(solve(pt)) return true;
+		for(int i=0;i<n;i++){
+			pt[i].x*=-1;
+			pt[i].y*=-1;
+		}
+		sort(pt.begin(),pt.end(),[](pair<LL,LL> p1,pair<LL,LL> p2){return atan2(p1.y,p1.x)<atan2(p2.y,p2.x);});
+		if(solve(pt)) return true;
+		return false;
+	}
+}
+
 typedef long long LL;
+
+#define x first
+#define y second
 
 LL absLL(LL x){return (x<0?-x:x);}
 LL gcd(LL a,LL b){return (b==0?a:gcd(b,a%b));}
@@ -31,166 +104,13 @@ int n;
 LL tot_achievement,achievement[MAXN+1];
 LL radius[MAXN+1],lvl[MAXN+2];
 
-#define x first
-#define y second
-
 bool on_the_left(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return (b.x-a.x)*(c.y-a.y)-(c.x-a.x)*(b.y-a.y)>0;}
+bool on_the_line(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return (b.x-a.x)*(c.y-a.y)-(c.x-a.x)*(b.y-a.y)==0;}
 
-namespace geo{
-	#define For(i,n) for(int i=1;i<=n;i++)
-	#define Fork(i,k,n) for(int i=k;i<=n;i++)
-	#define Rep(i,n) for(int i=0;i<n;i++)
-	#define ForD(i,n) for(int i=n;i;i--)
-	#define ForkD(i,k,n) for(int i=n;i>=k;i--)
-	#define RepD(i,n) for(int i=n;i>=0;i--)
-	#define Forp(x) for(int p=Pre[x];p;p=Next[p])
-	#define Forpiter(x) for(int &p=iter[x];p;p=Next[p])  
-	#define Lson (o<<1)
-	#define Rson ((o<<1)+1)
-	#define MEM(a) memset(a,0,sizeof(a));
-	#define MEMI(a) memset(a,127,sizeof(a));
-	#define MEMi(a) memset(a,128,sizeof(a));
-	#define INF (2139062143)
-	#define F (100000007)
-	#define pb push_back
-	#define mp make_pair 
-	#define fi first
-	#define se second
-	#define vi vector<int> 
-	#define pi pair<int,int>
-	#define SI(a) ((a).size())
-	#define ALL(x) (x).begin(),(x).end()
-	typedef long long ll;
-	ll mul(ll a,ll b){return (a*b)%F;}
-	ll add(ll a,ll b){return (a+b)%F;}
-	ll sub(ll a,ll b){return (a-b+llabs(a-b)/F*F+F)%F;}
-	void upd(ll &a,ll b){a=(a%F+b%F)%F;}
-	int read()
-	{
-		int x=0,f=1; char ch=getchar();
-		while(!isdigit(ch)) {if (ch=='-') f=-1; ch=getchar();}
-		while(isdigit(ch)) { x=x*10+ch-'0'; ch=getchar();}
-		return x*f;
-	} 
-	ll sqr(ll a){return a*a;}
-	ll dcmp(ll x){
-		if(x>0) return 1;if(x<0) return -1;return 0;
-	}
-	class P{
-		public:
-			ll x,y;
-			P(ll x=0,ll y=0):x(x),y(y){}
-			
-			friend ll dis2(P A,P B){return sqr(A.x-B.x)+sqr(A.y-B.y);	}
-			friend ll Dot(P A,P B) {return A.x*B.x+A.y*B.y; }
-				
-			friend P operator- (P A,P B) { return P(A.x-B.x,A.y-B.y); }
-			P(P A,P B):x(B.x-A.x),y(B.y-A.y){}
-			friend P operator+ (P A,P B) { return P(A.x+B.x,A.y+B.y); }
-			friend P operator* (P A,double p) { return P(A.x*p,A.y*p); }
-			friend P operator/ (P A,double p) { return P(A.x/p,A.y/p); }
-			friend bool operator< (const P& a,const P& b) {return dcmp(a.x-b.x)<0 ||(dcmp(a.x-b.x)==0&& dcmp(a.y-b.y)<0 );}
-		}; 
-	P read_point() {
-		P a;
-		scanf("%lld%lld",&a.x,&a.y);
-		return a;	
-	} 
-	bool operator==(const P& a,const P& b) {
-		return dcmp(a.x-b.x)==0 && dcmp(a.y-b.y) == 0;
-	} 
-	typedef P V;
-	
-	ll Cross(V A,V B) {return A.x*B.y - A.y*B.x;}
-	ll Area2(P A,P B,P C) {return Cross(B-A,C-A);}
-	
-	bool OnLeft(P A,P B,P C) {
-		return Cross(B-A,C-A)>0;
-	} 
-	P _p;
-	int cmp(P A,P B) //1:a>b 0:a<=b
-	{
-		ll tmp=Cross(V(_p,A),V(_p,B));
-		if (tmp>0) return 1;
-		else if (tmp==0) return (-(dis2(_p,A)-dis2(_p,B))>0)?1:0;
-		else return 0;
-	}
-	
-	struct Line{
-		P p;
-		V v;
-		double ang;
-		Line(){}
-		Line(P p,V v):p(p),v(v) {ang=atan2(v.y,v.x); }
-		bool operator<(const Line & L) const {
-			return ang<L.ang;
-		}
-		P point(double a) {
-			return p+v*a;
-		}
-	};
-	bool OnLeft(Line L,P p) {
-		return Cross(L.v,p-L.p)>0;
-	} 
-	
-}
-
-void proceed(int i,int j,vector<geo::P> &vp,vector< queue<int> > &q,vector<vector<int> > &vg ) {
-	while(!q[i].empty() && geo::OnLeft(geo::Line(q[i].front(),vp[i]-q[i].front()),vp[j])){
-		proceed(q[i].front(),j,vp,q,vg);
-		q[i].pop();
-	}
-	vg[i].pb(j); //add_edge(i,j)
-	q[j].push(i);
-}
-int L[MAXN];
-vector<vector<int> > get_reverese_graph(vector<vector<int> > vg) {
-	vector<vector<int> > rG;
-	rG.resize(vg.size());
-	Rep(i,vg.size()) {
-		Rep(j,vg[i].size()) {
-			rG[vg[i][j]].pb(i);
-		}
-	}
-	return rG;
-}
-void treat(geo::P p,vector<geo::P> vp, vector<int> &i, vector<int> &o) {
-	int imax=SI(i),omax=SI(o);
-	int l=omax,m=0;
-	RepD(j,imax-1) {
-		L[i[j]]=m+1;
-		while(l>0 && geo::OnLeft(vp[i[j]],p,vp[o[l]])) {
-			if(L[o[l]]>m) {
-				m=L[o[l]];
-				L[i[j]]=m+1;
-			}
-			l--;
-		}
-	}	
-}
-void maxchain(vector<geo::P> &vp, vector<vector<int> > &vg,vector<vector<int> > &rG){
-	for(int i=n-1;i>=1;i--) treat(vp[i],vp,rG[i],vg[i]);
-}
 bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
-	vector<geo::P> vp;
-	for(auto p:pt) {
-		vp.pb(geo::P(p.x,p.y));
-	}
-	geo::P _p=geo::P(p.x,p.y);
-	int n=pt.size();
-	geo::_p =_p;
-	sort(vp.begin(),vp.end(),geo::cmp);
-	vector<queue<int> > q;
-	q.resize(n);
-	vector<vector<int> > vg;
-	Rep(i,n-1) {
-		proceed(i,i+1,vp,q,vg);
-	}
-	vector<vector<int> > rG=get_reverese_graph(vg);
-	maxchain(vp,vg,rG);
+	double ret=ahdoc::find6hole(pt,p);
+	return ret;
 }
-
-
 
 bool check(int i,int ii,vector<pair<LL,LL>> pt,pair<LL,LL> p){
 	set<pair<LL,LL>> ang;
@@ -213,7 +133,60 @@ bool check(int i,int ii,vector<pair<LL,LL>> pt,pair<LL,LL> p){
 		for(int j=1;j<i;j++)
 			if(j!=i-1 && !on_the_left(p,pt[j-1],pt[i-2])) return false;
 	}
-	return find6hole(pt,p);
+	return !find6hole(pt,p);
+}
+
+void check_no6hole(vector<pair<LL,LL>> pt){ // Check whether or not the given set of points contains no 6-hole
+	int n=pt.size();
+	for(int i=0;i<n;i++)
+		for(int j=0;j<n;j++){
+			set<int> pts={i,j};
+			if(pts.size()!=2) continue;
+			if(pt[i].x==pt[j].x && pt[i].y==pt[j].y){
+				cerr<<"Two points coincide.\n";
+				exit(1);
+			}
+		}
+	for(int i=0;i<n;i++)
+		for(int j=0;j<n;j++)
+			for(int k=0;k<n;k++){
+				set<int> pts={i,j,k};
+				if(pts.size()!=3) continue;
+				if(on_the_line(pt[i],pt[j],pt[k])){
+					cerr<<"Three points which are colinear.\n";
+					exit(1);
+				}
+			}
+	int a[6];
+	for(a[0]=0;a[0]<n;a[0]++) for(a[1]=0;a[1]<n;a[1]++) for(a[2]=0;a[2]<n;a[2]++) for(a[3]=0;a[3]<n;a[3]++) for(a[4]=0;a[4]<n;a[4]++) for(a[5]=0;a[5]<n;a[5]++){
+		set<int> pts={a[0],a[1],a[2],a[3],a[4],a[5]};
+		if(pts.size()!=6) continue;
+		bool is6hole=true;
+		for(int i=0;i<6;i++){
+			int j=(i+1)%6;
+			for(int k=(j+1)%6;k!=i;k=(k+1)%6)
+				if(!on_the_left(pt[a[i]],pt[a[j]],pt[a[k]])){ is6hole=false; break; }
+			if(!is6hole) break;
+		}
+		for(int k=0;k<n;k++){
+			bool chk=true;
+			for(int i=0;i<6;i++) if(a[i]==k){ chk=false; break; }
+			if(!chk) continue;
+			bool chkout=false;
+			for(int i=0;i<6;i++){
+				int j=(i+1)%6;
+				if(!on_the_left(pt[a[i]],pt[a[j]],pt[k])){ chkout=true; break; }
+			}
+			if(!chkout){ is6hole=false; break; }
+		}
+		if(is6hole){
+			cerr<<"n="<<n<<"\n";
+			for(int k=0;k<n;k++) cerr<<"   Point #"<<k+1<<": ("<<pt[k].x<<","<<pt[k].y<<")\n";
+			cerr<<"A 6-hole:\n";
+			for(int i=0;i<6;i++) cerr<<"   "<<a[i]<<": ("<<pt[a[i]].x<<","<<pt[a[i]].y<<")\n";
+			exit(1);
+		}
+	}
 }
 
 pair<LL,LL> random_walk(int i,pair<LL,LL> p){
@@ -230,9 +203,9 @@ int depthdiff_to_confidence(int i,int x){
 
 LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are of the same level
 	++tot_achievement; ++achievement[i-1];
-	if(tot_achievement%1000000==0){
+	if(tot_achievement%100000==0){
 		cerr<<"achieve = "<<tot_achievement<<"     ";
-		for(int j=11;j<=30;j++){
+		for(int j=1;j<=30;j++){
 			if(achievement[j]==0) break;
 			if(lvl[j-1]!=lvl[j]) cerr<<"\n   lvl="<<lvl[j]<<"   ";
 			cerr<<j<<":"<<achievement[j]<<" ";
@@ -242,10 +215,10 @@ LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are
 	
 	if(i==n+1){
 		for(int i=1;i<=n;i++) cerr<<"Point #"<<i<<": ("<<pt[i-1].x<<","<<pt[i-1].y<<")\n";
+		check_no6hole(pt);
 		exit(0);
 	}
 	
-<<<<<<< HEAD
 	LL max_depth=i;
 	const LL initlvl=2;
 	const LL base=100;
@@ -263,9 +236,6 @@ LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are
 		case initlvl+9: amo=base*base*base*base*base*base; break;
 	}
 	for(LL t=1;t<=2*amo;t++){
-=======
-	for(int t=1;t<=100;t++){
->>>>>>> 3b6a89a5e8aab6b26615490902c5f9787f81c7b8
 		pair<LL,LL> p={random(-radius[i],radius[i]),random(-radius[i],radius[i])}; 
 		LL max_depthdiff=0;
 		for(LL t_conf=1;t_conf<=depthdiff_to_confidence(i,max_depthdiff);t_conf++){
@@ -278,13 +248,9 @@ LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are
 			}
 			vector<pair<LL,LL>> pt2=pt;
 			pt2.push_back(p);
-<<<<<<< HEAD
 			//check_no6hole(pt2);
 			max_depthdiff=max(max_depthdiff,dfs(i+1,lvl[i]==lvl[i+1]?ii:i+1,pt2)-i);
 			max_depth=max(max_depth,i+max_depthdiff);
-=======
-			dfs(i+1,lvl[i]==lvl[i+1]?ii:i+1,pt2);
->>>>>>> 3b6a89a5e8aab6b26615490902c5f9787f81c7b8
 		}
 	}
 	return max_depth;
@@ -312,7 +278,6 @@ void Realizer(string pat){
 }
 
 int main(){
-<<<<<<< HEAD
 	Realizer("67740");
 	//Realizer("67650");
 	//Realizer("57750");
@@ -327,8 +292,5 @@ int main(){
 	//check({{0,0},{59,-35},{-99,81},{-77,6},{16,-87},{96,-82}});
 	//cout<<ahdoc::find6hole({{0,0},{59,-35},{-99,81},{-77,6},{16,-87},{96,-82}},{92,-73})<<"\n";
 	//check({{0,0},{59,-35},{-99,81},{-77,6},{16,-87},{96,-82},{92,-73}});
-=======
-	Realizer("3477710");
->>>>>>> 3b6a89a5e8aab6b26615490902c5f9787f81c7b8
 }
 
