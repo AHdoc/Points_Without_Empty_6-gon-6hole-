@@ -278,9 +278,7 @@ void Realizer(string pat){
 }
 
 int main(){
-	Realizer("67740");
-	//Realizer("67650");
-	//Realizer("57750");
+	Realizer("346650");
 	
 	//Realizer("333330");
 	//Realizer("3333330");

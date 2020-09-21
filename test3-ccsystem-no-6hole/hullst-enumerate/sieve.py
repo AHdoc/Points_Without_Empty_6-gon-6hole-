@@ -19,7 +19,7 @@ def check(f_filename, g_filename):
         
         if chk:
             cnt[ord(s[0])-ord('0')] += 1
-            if '24' in g_filename and not '8' in s and len(s)<=5:
+            if '24' in g_filename and not '8' in s and not '7' in s and len(s)<=6:
                 print(s)
     
     for i in range(3,9):
