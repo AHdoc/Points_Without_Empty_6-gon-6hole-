@@ -189,12 +189,25 @@ void check_no6hole(vector<pair<LL,LL>> pt){ // Check whether or not the given se
 	}
 }
 
-void dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are of the same level
+pair<LL,LL> random_walk(int i,pair<LL,LL> p){
+	vector<pair<LL,LL>> dir={{0,1},{0,-1},{1,0},{-1,0}};
+	int o=rand()%4;
+	p.x+=dir[o].x; p.y+=dir[o].y;
+	return p;
+}
+
+int depthdiff_to_confidence(int i,int x){
+	if(x>=1) return x;
+	else return 1;
+}
+
+LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are of the same level
 	++tot_achievement; ++achievement[i-1];
 	if(tot_achievement%100000==0){
 		cerr<<"achieve = "<<tot_achievement<<"     ";
 		for(int j=1;j<=30;j++){
 			if(achievement[j]==0) break;
+			if(lvl[j-1]!=lvl[j]) cerr<<"\n   lvl="<<lvl[j]<<"   ";
 			cerr<<j<<":"<<achievement[j]<<" ";
 		}
 		cerr<<"\n";
@@ -206,15 +219,41 @@ void dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i a
 		exit(0);
 	}
 	
-	for(int t=1;t<=20;t++){
+	LL max_depth=i;
+	const LL initlvl=2;
+	const LL base=100;
+	LL amo=1;
+	switch(lvl[i]*(lvl[i-1]!=lvl[i])){
+		case initlvl: amo=base; break;
+		case initlvl+1: amo=base*base; break;
+		case initlvl+2: amo=base*base*base; break;
+		case initlvl+3: amo=base*base*base*base; break;
+		case initlvl+4: amo=base*base*base*base*base; break;
+		case initlvl+5: amo=base*base*base*base*base*base; break;
+		case initlvl+6: amo=base*base*base*base*base*base; break;
+		case initlvl+7: amo=base*base*base*base*base*base; break;
+		case initlvl+8: amo=base*base*base*base*base*base; break;
+		case initlvl+9: amo=base*base*base*base*base*base; break;
+	}
+	for(LL t=1;t<=2*amo;t++){
 		pair<LL,LL> p={random(-radius[i],radius[i]),random(-radius[i],radius[i])}; 
-		if(check(i,ii,pt,p)){
+		LL max_depthdiff=0;
+		for(LL t_conf=1;t_conf<=depthdiff_to_confidence(i,max_depthdiff);t_conf++){
+			if(t_conf==1){
+				if(!check(i,ii,pt,p)) continue;
+			}else{
+				pair<LL,LL> p2=random_walk(i,p);
+				if(!check(i,ii,pt,p2)) continue;
+				else p=p2;
+			}
 			vector<pair<LL,LL>> pt2=pt;
 			pt2.push_back(p);
 			//check_no6hole(pt2);
-			dfs(i+1,lvl[i]==lvl[i+1]?ii:i+1,pt2);
+			max_depthdiff=max(max_depthdiff,dfs(i+1,lvl[i]==lvl[i+1]?ii:i+1,pt2)-i);
+			max_depth=max(max_depth,i+max_depthdiff);
 		}
 	}
+	return max_depth;
 }
 
 void Realizer(string pat){
@@ -239,8 +278,13 @@ void Realizer(string pat){
 }
 
 int main(){
+	Realizer("67740");
+	//Realizer("67650");
+	//Realizer("57750");
+	
 	//Realizer("333330");
-	Realizer("3333330");
+	//Realizer("3333330");
+	
 	//Realizer("8730");
 	//Realizer("88510");
 	//Realizer("3477710");
