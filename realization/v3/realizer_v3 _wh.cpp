@@ -7,6 +7,7 @@
 #include<vector>
 #include<set>
 #include<algorithm>
+#include<unordered_map>
 #include<queue>
 #include<assert.h>
 using namespace std;
@@ -36,6 +37,14 @@ LL radius[MAXN+1],lvl[MAXN+2];
 
 bool on_the_left(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return (b.x-a.x)*(c.y-a.y)-(c.x-a.x)*(b.y-a.y)>0;}
 
+struct pair_hash
+{
+	template <class T1, class T2>
+	std::size_t operator() (const std::pair<T1, T2> &pair) const
+	{
+		return std::hash<T1>()(pair.first) ^ std::hash<T2>()(pair.second);
+	}
+};
 namespace geo{
 	#define For(i,n) for(int i=1;i<=n;i++)
 	#define Fork(i,k,n) for(int i=k;i<=n;i++)
@@ -157,31 +166,42 @@ vector<vector<int> > get_reverese_graph(vector<vector<int> > vg) {
 	}
 	return rG;
 }
-void treat(geo::P p,vector<geo::P> vp, vector<int> &i, vector<int> &o) {
+int ha(int i,int j,int n) {
+	return i*(n-1)+j;
+}
+void treat(geo::P p,int p_index, vector<geo::P> vp, vector<int> &i, vector<int> &o, unordered_map<int,int> &L) {
 	int imax=SI(i),omax=SI(o);
 	int l=omax,m=0;
 	RepD(j,imax-1) {
-		L[i[j]]=m+1;
+		int id1=ha(i[j],p_index,SI(vp));
+		L[id1 ]=m+1;
 		while(l>0 && geo::OnLeft(vp[i[j]],p,vp[o[l]])) {
-			if(L[o[l]]>m) {
-				m=L[o[l]];
-				L[i[j]]=m+1;
+			int id2 =ha(p_index,o[l],SI(vp));
+			if(L[id2]>m) {
+				m=L[id2];
+				L[id1]=m+1;
 			}
 			l--;
 		}
 	}	
 } 
-void maxchain(vector<geo::P> &vp, vector<vector<int> > &vg,vector<vector<int> > &rG){
-	for(int i=n-2;i>=0;i--) treat(vp[i],vp,rG[i],vg[i]);
+void maxchain(vector<geo::P> &vp, vector<vector<int> > &vg,vector<vector<int> > &rG, unordered_map<int,int> &L){
+	for(int i=n-2;i>=0;i--) treat(vp[i],i,vp,rG[i],vg[i],L);
 }
 
-void treat2(geo::P p,vector<geo::P> vp, vector<int> &i, vector<int> &o, vector<int> &L) {
+void treat2(geo::P p,int p_index,vector<geo::P> vp, vector<int> &i, vector<int> &o,unordered_map<int,int>  &L) {
 	int imax=SI(i),omax=SI(o);
-	vector<int> so=o;
-	sort(ALL(so),cmp2);
-	Rep(i,omax) {
-		if(L[o[j]]>=r-2 ){
-			C[o[j]]=
+	vector<pair<int,int> > so;
+	for(auto k:o) {
+		so.pb(mp(L[ha(p_index,k,SI(vp))] ,k));
+	}
+	sort(ALL(so));
+	
+	unordered_map< int,vector<pair<int,int> >  > C;
+	
+	Rep(j,omax) {
+		if(L[ha(p_index,o[j],SI(vp) )]>= r-2 ){
+			C[o[j]]=vector<pair<int,int> > {(p_index,o[j])};
 		}else {
 			
 		}
@@ -189,7 +209,7 @@ void treat2(geo::P p,vector<geo::P> vp, vector<int> &i, vector<int> &o, vector<i
 	int m=1,om=omax;
 	For(j,imax) {
 		while(m<=omax && geo::OnRight(vp[i[j]],p,vp[o[m]]) ) ){
-			
+			so.erase(so.find(o[m]));
 			om--;m++;
 		}
 		for (auto ch:C[i[j]]) {
@@ -207,11 +227,9 @@ void treat2(geo::P p,vector<geo::P> vp, vector<int> &i, vector<int> &o, vector<i
 		}
 	}	
 } 
-void chain(vector<geo::P> &vp, vector<vector<int> > &vg,vector<vector<int> > &rG,vector<int> &L){
-	for(int i=n-2;i>=0;i--) treat2(vp[i],vp,rG[i],vg[i],L);
+void chain(vector<geo::P> &vp, vector<vector<int> > &vg,vector<vector<int> > &rG,unordered_map<int,int>  &L){
+	for(int i=n-2;i>=0;i--) treat2(vp[i],i,vp,rG[i],vg[i],L);
 }
-
-
 
 bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
 	vector<geo::P> vp;
@@ -229,7 +247,7 @@ bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
 		proceed(i,i+1,vp,q,vg);
 	}
 	vector<vector<int> > rG=get_reverese_graph(vg);
-	 L;
+	unordered_map<int,int> L;
 	maxchain(vp,vg,rG,L);
 }
 
@@ -261,15 +279,9 @@ bool check(int i,int ii,vector<pair<LL,LL>> pt,pair<LL,LL> p){
 
 void dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are of the same level
 	++tot_achievement; ++achievement[i-1];
-<<<<<<< HEAD
-	if(tot_achievement%1000000==0){
-		cerr<<"achieve = "<<tot_achievement<<"     ";
-		for(int j=11;j<=30;j++){
-=======
 	if(tot_achievement%100000==0){
 		cerr<<"achieve = "<<tot_achievement<<"     ";
 		for(int j=1;j<=30;j++){
->>>>>>> 7250bc7c6d1f6c838f92613db5709e212bdf54b5
 			if(achievement[j]==0) break;
 			cerr<<j<<":"<<achievement[j]<<" ";
 		}
@@ -313,18 +325,6 @@ void Realizer(string pat){
 }
 
 int main(){
-<<<<<<< HEAD
 	Realizer("3477710");
-=======
-	//Realizer("333330");
-	Realizer("3333330");
-	//Realizer("8730");
-	//Realizer("88510");
-	//Realizer("3477710");
-	
-	//check({{0,0},{59,-35},{-99,81},{-77,6},{16,-87},{96,-82}});
-	//cout<<ahdoc::find6hole({{0,0},{59,-35},{-99,81},{-77,6},{16,-87},{96,-82}},{92,-73})<<"\n";
-	//check({{0,0},{59,-35},{-99,81},{-77,6},{16,-87},{96,-82},{92,-73}});
->>>>>>> 7250bc7c6d1f6c838f92613db5709e212bdf54b5
 }
 
