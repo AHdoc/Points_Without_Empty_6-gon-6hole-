@@ -101,7 +101,7 @@ LL random(LL a,LL b){
 const int MAXN=30;
 
 int n;
-LL tot_achievement,achievement[MAXN+1];
+LL tot_query_find6hole,achievement[MAXN+1];
 LL radius[MAXN+1],lvl[MAXN+2];
 
 bool on_the_left(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return (b.x-a.x)*(c.y-a.y)-(c.x-a.x)*(b.y-a.y)>0;}
@@ -109,6 +109,16 @@ bool on_the_line(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return (b.x-a.x)*(c.
 
 bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
 	double ret=ahdoc::find6hole(pt,p);
+	++tot_query_find6hole;
+	if(tot_query_find6hole%1000000LL==0){
+		cerr<<"tot_query_find6hole = "<<tot_query_find6hole<<"     ";
+		for(int j=1;j<=30;j++){
+			if(achievement[j]==0) break;
+			if(lvl[j-1]!=lvl[j]) cerr<<"\n   lvl="<<lvl[j]<<"   ";
+			cerr<<j<<":"<<achievement[j]<<" ";
+		}
+		cerr<<"\n";
+	}
 	return ret;
 }
 
@@ -202,17 +212,7 @@ int depthdiff_to_confidence(int i,int x){
 }
 
 LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are of the same level
-	++tot_achievement; ++achievement[i-1];
-	if(tot_achievement%100000==0){
-		cerr<<"achieve = "<<tot_achievement<<"     ";
-		for(int j=1;j<=30;j++){
-			if(achievement[j]==0) break;
-			if(lvl[j-1]!=lvl[j]) cerr<<"\n   lvl="<<lvl[j]<<"   ";
-			cerr<<j<<":"<<achievement[j]<<" ";
-		}
-		cerr<<"\n";
-	}
-	
+	++achievement[i-1];
 	if(i==n+1){
 		for(int i=1;i<=n;i++) cerr<<"Point #"<<i<<": ("<<pt[i-1].x<<","<<pt[i-1].y<<")\n";
 		check_no6hole(pt);
@@ -273,7 +273,7 @@ void Realizer(string pat){
 	for(int i=1;i<=n;i++) cerr<<"i="<<i<<":   radius="<<radius[i]<<"   lvl="<<lvl[i]<<"\n";
 	cerr<<"lvl[0]="<<lvl[0]<<"   lvl[n+1]="<<lvl[n+1]<<"\n";
 	
-	tot_achievement=0; for(int i=1;i<=30;i++) achievement[i]=0;
+	tot_query_find6hole=0; for(int i=1;i<=30;i++) achievement[i]=0;
 	for(;;) dfs(2,lvl[1]==lvl[2]?1:2,{{0LL,0LL}}); // must fix the kernel point
 }
 
