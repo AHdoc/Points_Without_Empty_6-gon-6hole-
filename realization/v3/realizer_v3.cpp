@@ -104,8 +104,11 @@ int n;
 LL tot_query_find6hole,achievement[MAXN+1];
 LL radius[MAXN+1],lvl[MAXN+2];
 
-bool on_the_left(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return (b.x-a.x)*(c.y-a.y)-(c.x-a.x)*(b.y-a.y)>0;}
-bool on_the_line(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return (b.x-a.x)*(c.y-a.y)-(c.x-a.x)*(b.y-a.y)==0;}
+LL crossproduct(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return (b.x-a.x)*(c.y-a.y)-(c.x-a.x)*(b.y-a.y);}
+LL innerproduct(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return (b.x-a.x)*(c.x-a.x)+(b.y-a.y)*(c.y-a.y);}
+LL crossproduct(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c,pair<LL,LL> d){return (b.x-a.x)*(d.y-c.y)-(d.x-c.x)*(b.y-a.y);}
+bool on_the_left(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return crossproduct(a,b,c)>0;}
+bool on_the_line(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return crossproduct(a,b,c)==0;}
 
 bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
 	double ret=ahdoc::find6hole(pt,p);
@@ -120,6 +123,46 @@ bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
 		cerr<<"\n";
 	}
 	return ret;
+}
+
+pair<pair<LL,LL>,pair<LL,LL>> get_range(int i,int ii,vector<pair<LL,LL>> pt){
+	LL minx=-radius[i],maxx=radius[i],miny=-radius[i],maxy=radius[i];
+	if(lvl[i]==lvl[i-1]+1){
+		for(int j=1;j<i;j++)
+			if(pt[j-1].x+1>minx)
+				minx=pt[j-1].x+1;
+	}else if(lvl[i]+1==lvl[i+1]){
+		if(ii>1){
+			int p=1,q=1;
+			for(int j=1;j<i;j++){
+				if(j!=ii && on_the_left(pt[ii-1],pt[p-1],pt[j-1])) p=j;
+				if(j!=i-1 && on_the_left(pt[i-2],pt[j-1],pt[q-1])) q=j;
+			}
+			if(p==i-1 && q==ii);
+			else if((on_the_left(pt[i-2],pt[q-1],pt[ii-1]) && on_the_left(pt[ii-1],pt[i-2],pt[p-1]))||(on_the_left(pt[i-2],pt[ii-1],pt[q-1]) && on_the_left(pt[ii-1],pt[p-1],pt[i-2]))){ // Two rays intersect.
+				// x=pt[i-2].x+(pt[q-1].x-pt[i-2].x)*t
+				// t=crossproduct(pt[ii-1],pt[p-1],pt[i-2])/crossproduct(pt[i-2],pt[q-1],pt[ii-1],pt[p-1])
+				
+				LL t_numerator=crossproduct(pt[ii-1],pt[p-1],pt[i-2]);
+				LL t_denominator=crossproduct(pt[i-2],pt[q-1],pt[ii-1],pt[p-1]);
+				double t=double(t_numerator)/double(t_denominator);
+				double xx=pt[i-2].x+(pt[q-1].x-pt[i-2].x)*t;
+				double yy=pt[i-2].y+(pt[q-1].y-pt[i-2].y)*t;
+				
+				if(xx>maxx || xx<minx || yy>maxy || yy<miny){
+					minx=maxx+1;
+					//cerr.precision(3);
+					//cerr<<fixed<<"intersection: ("<<xx<<","<<yy<<")\n";
+					//cerr<<"p="<<p<<" q="<<q<<"\n";
+					//cerr<<"t_numerator="<<t_numerator<<" t_denominator="<<t_denominator<<"\n";
+					//for(int j=1;j<i;j++) cerr<<j<<": ("<<pt[j-1].x<<","<<pt[j-1].y<<")\n";
+					//exit(1);
+				}
+			}else
+				minx=maxx+1;
+		}
+	}
+	return make_pair(make_pair(minx,maxx),make_pair(miny,maxy));
 }
 
 bool check(int i,int ii,vector<pair<LL,LL>> pt,pair<LL,LL> p){
@@ -221,9 +264,9 @@ LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are
 	
 	LL max_depth=i;
 	const LL initlvl=2;
-	const LL base=100;
+	const LL base=10;
 	LL amo=1;
-	switch(lvl[i]*(lvl[i-1]!=lvl[i])){
+	switch((lvl[i]-(lvl[i-1]!=lvl[i]))*(lvl[i-1]!=lvl[i] || lvl[i]!=lvl[i+1])){
 		case initlvl: amo=base; break;
 		case initlvl+1: amo=base*base; break;
 		case initlvl+2: amo=base*base*base; break;
@@ -235,8 +278,10 @@ LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are
 		case initlvl+8: amo=base*base*base*base*base*base; break;
 		case initlvl+9: amo=base*base*base*base*base*base; break;
 	}
+	pair<pair<LL,LL>,pair<LL,LL>> range=get_range(i,ii,pt); 
+	if(range.first.first>range.first.second || range.second.first>range.second.second) amo=0;
 	for(LL t=1;t<=2*amo;t++){
-		pair<LL,LL> p={random(-radius[i],radius[i]),random(-radius[i],radius[i])}; 
+		pair<LL,LL> p={random(range.first.first,range.first.second),random(range.second.first,range.second.second)}; 
 		LL max_depthdiff=0;
 		for(LL t_conf=1;t_conf<=depthdiff_to_confidence(i,max_depthdiff);t_conf++){
 			if(t_conf==1){
@@ -278,12 +323,12 @@ void Realizer(string pat){
 }
 
 int main(){
-	Realizer("346650");
+	//Realizer("346650");
 	
 	//Realizer("333330");
 	//Realizer("3333330");
 	
-	//Realizer("8730");
+	Realizer("8730");
 	//Realizer("88510");
 	//Realizer("3477710");
 	
