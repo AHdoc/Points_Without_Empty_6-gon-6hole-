@@ -117,12 +117,26 @@ namespace geo{
 		return Cross(B-A,C-A)>0;
 	} 
 	P _p;
+	int Quadrant(P a)
+	{
+	    if(a.x>0&&a.y>=0) return 1;
+	    if(a.x<=0&&a.y>0) return 2;
+	    if(a.x<0&&a.y<=0) return 3;
+	    return 4;
+	}
+
 	int cmp(P A,P B) //1:a>b 0:a<=b
 	{
+		if(Quadrant(A)!=Quadrant(B))
+			return Quadrant(A)<Quadrant(B);
 		ll tmp=Cross(V(_p,A),V(_p,B));
 		if (tmp>0) return 1;
 		else if (tmp==0) return (-(dis2(_p,A)-dis2(_p,B))>0)?1:0;
 		else return 0;
+	}
+	void PolarSort(vector<P> &v,P _p2) {
+		_p=_p2;
+		sort(ALL(v),cmp);
 	}
 	
 	struct Line{
@@ -144,91 +158,74 @@ namespace geo{
 	bool OnRight(Line L,P p) {
 		return Cross(L.v,p-L.p)<0;
 	} 
-	
-}
+	vector<P> v;
+	bool proceed(int i,int j,P _p,vector<P> &vp,vector< queue<int> > &q,vector<queue<pair<int,int> > > &q2,
+	vector<vector<int> > &vg ,vector<pair<int,int> > &C,vector<vector< pair<int,int>> >  &Ce) {
+		while(!q[i].empty() && geo::OnLeft(geo::Line(q[i].front(),vp[i]-q[i].front()),vp[j])){
+		 //if k can see i && i can see j && turn)left, then k can see j
+			if (proceed(q[i].front(),j,_p,vp,q,q2,vg,C,Ce)) return 1; // add k-j and p-k-j 
+				
+				auto now=q2[i].front();
+				C[i].fi=max(C[i].fi,now.fi);
+				C[i].se=max(C[i].se,now.se);
+				
+				q2[i].pop();
+				q[i].pop();
+		}
+		vg[i].pb(j); //add_edge(i,j)
+		
+		if(C[i].se!=-1 && geo::OnLeft(geo::Line(vp[C[i].se],vp[i]-vp[C[i].se]),_p ) ) {
+			return 1;
+		} 
+		Ce[i].push_back(mp(C[i].fi,C[i].se));
+		q[j].push(i);
+		return 0;
+	}
 
-void proceed(int i,int j,vector<geo::P> &vp,vector< queue<int> > &q,vector<vector<int> > &vg ) {
-	while(!q[i].empty() && geo::OnLeft(geo::Line(q[i].front(),vp[i]-q[i].front()),vp[j])){
-		proceed(q[i].front(),j,vp,q,vg);
-		q[i].pop();
-	}
-	vg[i].pb(j); //add_edge(i,j)
-	q[j].push(i);
-}
-int L[MAXN];
-vector<vector<int> > get_reverese_graph(vector<vector<int> > vg) {
-	vector<vector<int> > rG;
-	rG.resize(vg.size());
-	Rep(i,vg.size()) {
-		Rep(j,vg[i].size()) {
-			rG[vg[i][j]].pb(i);
-		}
-	}
-	return rG;
-}
-int ha(int i,int j,int n) {
-	return i*(n-1)+j;
-}
-void treat(geo::P p,int p_index, vector<geo::P> vp, vector<int> &i, vector<int> &o, unordered_map<int,int> &L) {
-	int imax=SI(i),omax=SI(o);
-	int l=omax,m=0;
-	RepD(j,imax-1) {
-		int id1=ha(i[j],p_index,SI(vp));
-		L[id1 ]=m+1;
-		while(l>0 && geo::OnLeft(vp[i[j]],p,vp[o[l]])) {
-			int id2 =ha(p_index,o[l],SI(vp));
-			if(L[id2]>m) {
-				m=L[id2];
-				L[id1]=m+1;
-			}
-			l--;
-		}
-	}	
-} 
-void maxchain(vector<geo::P> &vp, vector<vector<int> > &vg,vector<vector<int> > &rG, unordered_map<int,int> &L){
-	for(int i=n-2;i>=0;i--) treat(vp[i],i,vp,rG[i],vg[i],L);
-}
-
-void treat2(geo::P p,int p_index,vector<geo::P> vp, vector<int> &i, vector<int> &o,unordered_map<int,int>  &L) {
-	int imax=SI(i),omax=SI(o);
-	vector<pair<int,int> > so;
-	for(auto k:o) {
-		so.pb(mp(L[ha(p_index,k,SI(vp))] ,k));
-	}
-	sort(ALL(so));
+	bool find6hole(vector<P> vp,P _p){
 	
-	unordered_map< int,vector<pair<int,int> >  > C;
-	
-	Rep(j,omax) {
-		if(L[ha(p_index,o[j],SI(vp) )]>= r-2 ){
-			C[o[j]]=vector<pair<int,int> > {(p_index,o[j])};
-		}else {
-			
-		}
-	}
-	int m=1,om=omax;
-	For(j,imax) {
-		while(m<=omax && geo::OnRight(vp[i[j]],p,vp[o[m]]) ) ){
-			so.erase(so.find(o[m]));
-			om--;m++;
-		}
-		for (auto ch:C[i[j]]) {
-			int t=1,l=SI(ch);
-			while(t<=om&&L[o2[t]]>=r-2-l){
-				ch.pb(o2[t]);
-				if(l==r-3) {
-					report(ch);
-					else {
-						C[o2[t]].pb(ch);
-					}
-				}
-				++t;
+		int n=vp.size();
+		if (n<6) return 0;
+		PolarSort(vp,_p);
+		
+		{
+			vector<queue<int> > q;
+			vector<queue<pair<int,int> > > q2;
+			vector<vector<int> > vg;
+			vector<pair<int,int> > C; //C_2,C_3
+			vector<vector< pair<int,int>  > > Ce;
+			q.resize(n); q2.resize(n);
+			C.resize(n); vg.resize(n);
+			Ce.resize(n);
+			Rep(i,n) C[i]=make_pair(-1,-1);
+				
+			Rep(i,n-1) {
+				if(proceed(i,i+1,_p,vp,q,q2,vg,C,Ce))return 1;
 			}
 		}
-	}	
-} 
-void chain(vector<geo::P> &vp, vector<vector<int> > &vg,vector<vector<int> > &rG,unordered_map<int,int>  &L){
-	for(int i=n-2;i>=0;i--) treat2(vp[i],i,vp,rG[i],vg[i],L);
+		int id=-1; 
+		while(id<n&&OnLeft(_p,vp[0],vp[id])) ++id;
+		if(id>=n&&id==-1) return 0;
+		
+		rotate(vp.begin(),vp.begin()+id,vp.end());
+
+		{
+			vector<queue<int> > q;
+			vector<queue<pair<int,int> > > q2;
+			vector<vector<int> > vg;
+			vector<pair<int,int> > C; //C_2,C_3
+			vector<vector< pair<int,int>  > > Ce;
+			q.resize(n); q2.resize(n);
+			C.resize(n); vg.resize(n);
+			Ce.resize(n);
+			Rep(i,n) C[i]=make_pair(-1,-1);
+				
+			Rep(i,n-1) {
+				if(proceed(i,i+1,_p,vp,q,q2,vg,C,Ce))return 1;
+			}
+		}
+		return 0;
+	}
 }
 
 bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
@@ -237,18 +234,11 @@ bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
 		vp.pb(geo::P(p.x,p.y));
 	}
 	geo::P _p=geo::P(p.x,p.y);
-	int n=pt.size();
-	geo::_p =_p;
-	sort(vp.begin(),vp.end(),geo::cmp);
-	vector<queue<int> > q;
-	q.resize(n);
-	vector<vector<int> > vg;
-	Rep(i,n-1) {
-		proceed(i,i+1,vp,q,vg);
-	}
-	vector<vector<int> > rG=get_reverese_graph(vg);
-	unordered_map<int,int> L;
-	maxchain(vp,vg,rG,L);
+	
+	bool b=geo::find6hole(vp,_p);
+	cout<<b<<endl;
+	return b;
+	
 }
 
 
