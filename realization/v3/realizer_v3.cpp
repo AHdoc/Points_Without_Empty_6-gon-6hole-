@@ -81,6 +81,102 @@ namespace ahdoc{
 	}
 }
 
+namespace geo {
+	typedef long double ld;
+	
+	const double eps=1e-3;
+	const double maxr=1e9;
+	
+	default_random_engine gen;
+	
+	class P{
+		public:
+			double x,y;
+			P(double x=0,double y=0):x(x),y(y){}
+			friend ld Dot(P A,P B) {return A.x*B.x+A.y*B.y; }
+			friend ld Length(P A) {return sqrt(Dot(A,A)); }
+			friend P operator- (P A,P B) { return P(A.x-B.x,A.y-B.y); }
+			friend P operator+ (P A,P B) { return P(A.x+B.x,A.y+B.y); }
+			friend P operator* (P A,double p) { return P(A.x*p,A.y*p); }
+	};
+	
+	typedef P V;
+	double Cross(V A,V B) {return A.x*B.y - A.y*B.x;}
+	
+	struct Line{
+		P p;
+		V v;
+		double ang;
+		Line(){}
+		Line(P p,V v):p(p),v(v) {ang=atan2(v.y,v.x); }
+		bool operator<(const Line & L) const {
+			return ang<L.ang;
+		}
+	};
+	
+	bool OnLeft(Line L,P p) {
+		return Cross(L.v,p-L.p)>eps*Length(L.v);
+	} 
+	P GetIntersection(Line a,Line b) {
+		V u=a.p-b.p;
+		double t = Cross(b.v,u) / Cross(a.v, b.v);
+		return a.p + a.v*t;
+	}
+	vector<P> HalfplaneIntersection(vector<Line> L) {
+		sort(L.begin(),L.end());
+		int n=L.size(),fi,la;
+		vector<P> p; p.resize(n);
+		vector<Line> q; q.resize(n);
+		q[fi=la=0]=L[0];
+		for(int i=1;i<=n-1;i++){
+			while(fi<la && !OnLeft(L[i],p[la-1])) --la;
+			while(fi<la && !OnLeft(L[i],p[fi])) ++fi;
+			q[++la]=L[i];
+			if(fabs(Cross(q[la].v, q[la-1].v))*maxr<eps*Length(q[la].v)*Length(q[la-1].v)){
+				--la;
+				if(OnLeft(q[la],L[i].p)) q[la]=L[i];
+			}
+			if (fi<la) p[la-1]=GetIntersection(q[la-1],q[la]);
+		}
+		while(fi<la && !OnLeft(q[fi],p[la-1])) --la;
+		vector<P> res;
+		if(la-fi<=1);
+		else{
+			p[la]=GetIntersection(q[la],q[fi]);
+			for(int i=fi;i<=la;i++) res.push_back(p[i]);
+		}
+		return res;
+	} 
+	
+	double PolygonArea(vector<P> p){
+		double area=0.0;
+		int n=p.size();
+		for(int i=1;i+1<n;i++)
+			area+=0.5*Cross(p[i]-p[0],p[i+1]-p[0]);
+		return area;
+	}
+	double Realnum_Inside01(){return (double)(rand()+1)/32769;}
+	int Weighted_Random(vector<double> weights){
+		discrete_distribution<int> dist(weights.begin(),weights.end());
+		return dist(gen);
+	}
+	P PointPicking_Triangle(vector<P> tri){
+		double a=Realnum_Inside01(),b=Realnum_Inside01();
+		if(a+b<1)
+			return {tri[0].x+a*(tri[1].x-tri[0].x)+b*(tri[2].x-tri[0].x),tri[0].y+a*(tri[1].y-tri[0].y)+b*(tri[2].y-tri[0].y)};
+		else
+			return PointPicking_Triangle(tri);
+	}
+	P PointPicking_Polygon(vector<P> p){
+		int n=p.size();
+		vector<double> areas;
+		for(int i=1;i+1<n;i++)
+			areas.push_back(0.5*Cross(p[i]-p[0],p[i+1]-p[0]));
+		int j=1+Weighted_Random(areas);
+		return PointPicking_Triangle({p[0],p[j],p[j+1]}); 
+	}
+}
+
 typedef long long LL;
 
 #define x first
@@ -101,7 +197,7 @@ LL random(LL a,LL b){
 const int MAXN=30;
 
 int n;
-LL tot_query_find6hole,achievement[MAXN+1];
+LL tot_query_check,tot_query_find6hole,achievement[MAXN+1];
 LL radius[MAXN+1],lvl[MAXN+2];
 
 LL crossproduct(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return (b.x-a.x)*(c.y-a.y)-(c.x-a.x)*(b.y-a.y);}
@@ -114,7 +210,7 @@ bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
 	double ret=ahdoc::find6hole(pt,p);
 	++tot_query_find6hole;
 	if(tot_query_find6hole%1000000LL==0){
-		cerr<<"tot_query_find6hole = "<<tot_query_find6hole<<"     ";
+		cerr<<"tot_query_find6hole = "<<tot_query_find6hole<<" & tot_query_check = "<<tot_query_check<<":";
 		for(int j=1;j<=30;j++){
 			if(achievement[j]==0) break;
 			if(lvl[j-1]!=lvl[j]) cerr<<"\n   lvl="<<lvl[j]<<"   ";
@@ -125,47 +221,29 @@ bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
 	return ret;
 }
 
-pair<pair<LL,LL>,pair<LL,LL>> get_range(int i,int ii,vector<pair<LL,LL>> pt){
-	LL minx=-radius[i],maxx=radius[i],miny=-radius[i],maxy=radius[i];
+vector<geo::P> get_range(int i,int ii,vector<pair<LL,LL>> pt){
+	geo::P A((double)radius[i],(double)radius[i]),B((double)-radius[i],(double)radius[i]),C((double)-radius[i],(double)-radius[i]),D((double)radius[i],(double)-radius[i]);
+	vector<geo::Line> L={geo::Line(A,B-A),geo::Line(B,C-B),geo::Line(C,D-C),geo::Line(D,A-D)};
 	if(lvl[i]==lvl[i-1]+1){
 		for(int j=1;j<i;j++)
-			if(pt[j-1].x+1>minx)
-				minx=pt[j-1].x+1;
+			L.push_back(geo::Line(geo::P((double)pt[j-1].x+1,0.0),geo::P(0.0,-1.0)));
 	}else if(lvl[i]+1==lvl[i+1]){
-		if(ii>1){
-			int p=1,q=1;
-			for(int j=1;j<i;j++){
-				if(j!=ii && on_the_left(pt[ii-1],pt[p-1],pt[j-1])) p=j;
-				if(j!=i-1 && on_the_left(pt[i-2],pt[j-1],pt[q-1])) q=j;
-			}
-			if(p==i-1 && q==ii);
-			else if((on_the_left(pt[i-2],pt[q-1],pt[ii-1]) && on_the_left(pt[ii-1],pt[i-2],pt[p-1]))||(on_the_left(pt[i-2],pt[ii-1],pt[q-1]) && on_the_left(pt[ii-1],pt[p-1],pt[i-2]))){ // Two rays intersect.
-				// x=pt[i-2].x+(pt[q-1].x-pt[i-2].x)*t
-				// t=crossproduct(pt[ii-1],pt[p-1],pt[i-2])/crossproduct(pt[i-2],pt[q-1],pt[ii-1],pt[p-1])
-				
-				LL t_numerator=crossproduct(pt[ii-1],pt[p-1],pt[i-2]);
-				LL t_denominator=crossproduct(pt[i-2],pt[q-1],pt[ii-1],pt[p-1]);
-				double t=double(t_numerator)/double(t_denominator);
-				double xx=pt[i-2].x+(pt[q-1].x-pt[i-2].x)*t;
-				double yy=pt[i-2].y+(pt[q-1].y-pt[i-2].y)*t;
-				
-				if(xx>maxx || xx<minx || yy>maxy || yy<miny){
-					minx=maxx+1;
-					//cerr.precision(3);
-					//cerr<<fixed<<"intersection: ("<<xx<<","<<yy<<")\n";
-					//cerr<<"p="<<p<<" q="<<q<<"\n";
-					//cerr<<"t_numerator="<<t_numerator<<" t_denominator="<<t_denominator<<"\n";
-					//for(int j=1;j<i;j++) cerr<<j<<": ("<<pt[j-1].x<<","<<pt[j-1].y<<")\n";
-					//exit(1);
-				}
-			}else
-				minx=maxx+1;
+		for(int j=1;j<i;j++){
+			if(j!=i-1)
+				L.push_back(geo::Line(geo::P(pt[j-1].x,pt[j-1].y),geo::P(pt[i-2].x,pt[i-2].y)-geo::P(pt[j-1].x,pt[j-1].y)));
+			if(j!=ii)
+				L.push_back(geo::Line(geo::P(pt[ii-1].x,pt[ii-1].y),geo::P(pt[j-1].x,pt[j-1].y)-geo::P(pt[ii-1].x,pt[ii-1].y)));
 		}
+	}else{
+		for(int j=1;j<i;j++)
+			if(j!=i-1)
+				L.push_back(geo::Line(geo::P(pt[j-1].x,pt[j-1].y),geo::P(pt[i-2].x,pt[i-2].y)-geo::P(pt[j-1].x,pt[j-1].y)));
 	}
-	return make_pair(make_pair(minx,maxx),make_pair(miny,maxy));
+	return geo::HalfplaneIntersection(L);
 }
 
 bool check(int i,int ii,vector<pair<LL,LL>> pt,pair<LL,LL> p){
+	++tot_query_check;
 	set<pair<LL,LL>> ang;
 	for(int j=1;j<i;j++){
 		LL x=pt[j-1].x-p.x,y=pt[j-1].y-p.y;
@@ -278,10 +356,11 @@ LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are
 		case initlvl+8: amo=base*base*base*base*base*base; break;
 		case initlvl+9: amo=base*base*base*base*base*base; break;
 	}
-	pair<pair<LL,LL>,pair<LL,LL>> range=get_range(i,ii,pt); 
-	if(range.first.first>range.first.second || range.second.first>range.second.second) amo=0;
+	vector<geo::P> range=get_range(i,ii,pt); 
+	if(geo::PolygonArea(range)<geo::eps) amo=0;
 	for(LL t=1;t<=2*amo;t++){
-		pair<LL,LL> p={random(range.first.first,range.first.second),random(range.second.first,range.second.second)}; 
+		geo::P _p=geo::PointPicking_Polygon(range); 
+		pair<LL,LL> p=make_pair((LL)_p.x,(LL)_p.y);
 		LL max_depthdiff=0;
 		for(LL t_conf=1;t_conf<=depthdiff_to_confidence(i,max_depthdiff);t_conf++){
 			if(t_conf==1){
@@ -323,12 +402,12 @@ void Realizer(string pat){
 }
 
 int main(){
-	//Realizer("346650");
+	Realizer("346650");
 	
-	//Realizer("333330");
-	//Realizer("3333330");
+	//Realizer("333330"); //done with base=2, <5s.
+	//Realizer("3333330"); //done with base=2, <30s. 
 	
-	Realizer("8730");
+	//Realizer("8730");
 	//Realizer("88510");
 	//Realizer("3477710");
 	
