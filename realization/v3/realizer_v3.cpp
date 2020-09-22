@@ -187,15 +187,6 @@ typedef long long LL;
 
 LL absLL(LL x){return (x<0?-x:x);}
 LL gcd(LL a,LL b){return (b==0?a:gcd(b,a%b));}
-LL random(LL a,LL b){
-	assert(a<=b);
-	LL x=rand()*32768;
-	x=(x+rand())*32768;
-	x=(x+rand())*32768;
-	x=(x+rand())%(b-a+1);
-	x+=a;
-	return x;
-}
 
 const int MAXN=30;
 
