@@ -347,7 +347,6 @@ namespace geo_ll{
 		int n=vp.size();
 		if (n<6) return 0;
 		PolarSort(vp,_p);
-		
 		{
 			vector<queue<int> > q;
 			vector<queue<pair<int,int> > > q2;
@@ -396,7 +395,19 @@ bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
 	geo_ll::P _p=geo_ll::P(p.x,p.y);
 	
 	bool b=geo_ll::find6hole(vp,_p);
-	cout<<b<<endl;
+	++tot_query_find6hole;
+	if(tot_query_find6hole%1000000LL==0){
+		time_t current_t=time(NULL);
+		time(&current_t);
+		cerr<<"time:"<<ctime(&current_t)<<endl;
+		cerr<<"tot_query_find6hole = "<<tot_query_find6hole<<" & tot_query_check = "<<tot_query_check<<":";
+		for(int j=1;j<=30;j++){
+			if(achievement[j]==0) break;
+			if(lvl[j-1]!=lvl[j]) cerr<<"\n   lvl="<<lvl[j]<<"   ";
+			cerr<<j<<":"<<achievement[j]<<" ";
+		}
+		cerr<<"\n";
+	}
 	return b;
 	
 }
@@ -583,6 +594,7 @@ void Realizer(string pat){
 }
 
 int main(){
+	cout<<"d";
 	Realizer("346650");
 	
 	//Realizer("333330"); //done with base=2, <5s.
