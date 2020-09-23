@@ -155,7 +155,10 @@ namespace geo {
 			area+=0.5*Cross(p[i]-p[0],p[i+1]-p[0]);
 		return area;
 	}
-	double Realnum_Inside01(){return (double)(rand()+1)/32769;}
+	double Realnum_Inside01(){
+		uniform_real_distribution<> dist(0,1);
+		return dist(gen);
+	}
 	int Weighted_Random(vector<double> weights){
 		discrete_distribution<int> dist(weights.begin(),weights.end());
 		return dist(gen);
@@ -184,15 +187,6 @@ typedef long long LL;
 
 LL absLL(LL x){return (x<0?-x:x);}
 LL gcd(LL a,LL b){return (b==0?a:gcd(b,a%b));}
-LL random(LL a,LL b){
-	assert(a<=b);
-	LL x=rand()*32768;
-	x=(x+rand())*32768;
-	x=(x+rand())*32768;
-	x=(x+rand())%(b-a+1);
-	x+=a;
-	return x;
-}
 
 const int MAXN=30;
 
@@ -342,7 +336,7 @@ LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are
 	
 	LL max_depth=i;
 	const LL initlvl=2;
-	const LL base=10;
+	const LL base=5;
 	LL amo=1;
 	switch((lvl[i]-(lvl[i-1]!=lvl[i]))*(lvl[i-1]!=lvl[i] || lvl[i]!=lvl[i+1])){
 		case initlvl: amo=base; break;
@@ -358,7 +352,7 @@ LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are
 	}
 	vector<geo::P> range=get_range(i,ii,pt); 
 	if(geo::PolygonArea(range)<geo::eps) amo=0;
-	for(LL t=1;t<=2*amo;t++){
+	for(LL t=1;t<=amo;t++){
 		geo::P _p=geo::PointPicking_Polygon(range); 
 		pair<LL,LL> p=make_pair((LL)_p.x,(LL)_p.y);
 		LL max_depthdiff=0;
@@ -402,12 +396,12 @@ void Realizer(string pat){
 }
 
 int main(){
-	Realizer("346650");
+	//Realizer("346650");
 	
 	//Realizer("333330"); //done with base=2, <5s.
 	//Realizer("3333330"); //done with base=2, <30s. 
 	
-	//Realizer("8730");
+	Realizer("8730");
 	//Realizer("88510");
 	//Realizer("3477710");
 	
