@@ -21,28 +21,24 @@ namespace ahdoc{
 	#define c3 second
 	#define MP3(a,b,c) make_pair(make_pair(a,b),c)
 	
-	const int MAXN=30;
-	
-	int n;
-	pair<LL,LL> pt[MAXN];
-	int Q_head[MAXN],Q_tail[MAXN];
-	pair<pair<int,int>,int> Q[MAXN][MAXN];
-	pair<pair<int,int>,int> C[MAXN];
-	
 	bool on_the_left(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return (b.x-a.x)*(c.y-a.y)-(c.x-a.x)*(b.y-a.y)>0;}
+	
+	vector<pair<LL,LL>> pt;
+	vector<queue<pair<pair<int,int>,int>>> Q;
+	vector<pair<pair<int,int>,int>> C;
 	
 	bool proceed(int i,int j){
 		//cerr<<">   i="<<i<<"   j="<<j<<"\n";
-		while(Q_head[i]!=Q_tail[i] && on_the_left(pt[Q[i][Q_head[i]].c1],pt[i],pt[j])){
-			if(proceed(Q[i][Q_head[i]].c1,j)) return true;
-			auto tmp=Q[i][Q_head[i]];
+		while(!Q[i].empty() && on_the_left(pt[Q[i].front().c1],pt[i],pt[j])){
+			if(proceed(Q[i].front().c1,j)) return true;
+			auto tmp=Q[i].front();
 			if(tmp.c1>C[i].c1) C[i].c1=tmp.c1;
 			if(tmp.c2>C[i].c2) C[i].c2=tmp.c2;
 			if(tmp.c3>C[i].c3) C[i].c3=tmp.c3;
-			++Q_head[i];
+			Q[i].pop();
 		}
 		if(C[i].c3!=-1 && on_the_left(pt[C[i].c3],pt[j],make_pair(0LL,0LL))) return true;
-		Q[j][Q_tail[j]++]=MP3(i,C[i].c1,C[i].c2);
+		Q[j].push(MP3(i,C[i].c1,C[i].c2));
 		//cerr<<"<   i="<<i<<"   j="<<j<<"\n";
 		//for(int k=0;k<pt.size();k++){
 		//	cerr<<"       Q["<<k<<"]={ ";
@@ -53,27 +49,34 @@ namespace ahdoc{
 		return false;
 	}
 	
-	bool solve(){
+	bool solve(vector<pair<LL,LL>> _pt){
+		pt=_pt;
+		int n=pt.size();
 		//cerr<<"n="<<n<<"\n";
 		//for(int i=0;i<n;i++) cerr<<"   "<<i<<": ("<<pt[i].x<<","<<pt[i].y<<")\n";
-		for(int i=0;i<n;i++){
-			Q_head[i]=Q_tail[i]=0;
-			C[i]=MP3(-1,-1,-1);
-		}
+		Q.clear(); C.clear(); Q.resize(n); C.resize(n);
+		for(int i=0;i<n;i++)
+			C[i].c1=C[i].c2=C[i].c3=-1;
 		for(int i=0;i+1<n;i++)
 			if(proceed(i,i+1))
 				return true;
 		return false; 
 	}
 	
-	bool find6hole(vector<pair<LL,LL>> _pt,pair<LL,LL> p){
-		n=_pt.size();
+	bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
+		int n=pt.size();
 		for(int i=0;i<n;i++){
-			pt[i].x=_pt[i].x-p.x;
-			pt[i].y=_pt[i].y-p.y;
+			pt[i].x-=p.x;
+			pt[i].y-=p.y;
 		}
-		sort(pt,pt+n,[](pair<LL,LL> p1,pair<LL,LL> p2){return p1.x*p2.y-p1.y*p2.x>0;});
-		if(solve()) return true;
+		sort(pt.begin(),pt.end(),[](pair<LL,LL> p1,pair<LL,LL> p2){return atan2(p1.y,p1.x)<atan2(p2.y,p2.x);});
+		if(solve(pt)) return true;
+		for(int i=0;i<n;i++){
+			pt[i].x*=-1;
+			pt[i].y*=-1;
+		}
+		sort(pt.begin(),pt.end(),[](pair<LL,LL> p1,pair<LL,LL> p2){return atan2(p1.y,p1.x)<atan2(p2.y,p2.x);});
+		if(solve(pt)) return true;
 		return false;
 	}
 }
@@ -152,10 +155,7 @@ namespace geo {
 			area+=0.5*Cross(p[i]-p[0],p[i+1]-p[0]);
 		return area;
 	}
-	double Realnum_Inside01(){
-		uniform_real_distribution<> dist(0,1);
-		return dist(gen);
-	}
+	double Realnum_Inside01(){return (double)(rand()+1)/32769;}
 	int Weighted_Random(vector<double> weights){
 		discrete_distribution<int> dist(weights.begin(),weights.end());
 		return dist(gen);
@@ -184,6 +184,15 @@ typedef long long LL;
 
 LL absLL(LL x){return (x<0?-x:x);}
 LL gcd(LL a,LL b){return (b==0?a:gcd(b,a%b));}
+LL random(LL a,LL b){
+	assert(a<=b);
+	LL x=rand()*32768;
+	x=(x+rand())*32768;
+	x=(x+rand())*32768;
+	x=(x+rand())%(b-a+1);
+	x+=a;
+	return x;
+}
 
 const int MAXN=30;
 
@@ -196,12 +205,203 @@ LL innerproduct(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return (b.x-a.x)*(c.x
 LL crossproduct(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c,pair<LL,LL> d){return (b.x-a.x)*(d.y-c.y)-(d.x-c.x)*(b.y-a.y);}
 bool on_the_left(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return crossproduct(a,b,c)>0;}
 bool on_the_line(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return crossproduct(a,b,c)==0;}
-
+namespace geo_ll{
+	#define For(i,n) for(int i=1;i<=n;i++)
+	#define Fork(i,k,n) for(int i=k;i<=n;i++)
+	#define Rep(i,n) for(int i=0;i<n;i++)
+	#define ForD(i,n) for(int i=n;i;i--)
+	#define ForkD(i,k,n) for(int i=n;i>=k;i--)
+	#define RepD(i,n) for(int i=n;i>=0;i--)
+	#define Forp(x) for(int p=Pre[x];p;p=Next[p])
+	#define Forpiter(x) for(int &p=iter[x];p;p=Next[p])  
+	#define Lson (o<<1)
+	#define Rson ((o<<1)+1)
+	#define MEM(a) memset(a,0,sizeof(a));
+	#define MEMI(a) memset(a,127,sizeof(a));
+	#define MEMi(a) memset(a,128,sizeof(a));
+	#define INF (2139062143)
+	#define F (100000007)
+	#define pb push_back
+	#define mp make_pair 
+	#define fi first
+	#define se second
+	#define vi vector<int> 
+	#define pi pair<int,int>
+	#define SI(a) ((a).size())
+	#define ALL(x) (x).begin(),(x).end()
+	typedef long long ll;
+	ll mul(ll a,ll b){return (a*b)%F;}
+	ll add(ll a,ll b){return (a+b)%F;}
+	ll sub(ll a,ll b){return (a-b+llabs(a-b)/F*F+F)%F;}
+	void upd(ll &a,ll b){a=(a%F+b%F)%F;}
+	int read()
+	{
+		int x=0,f=1; char ch=getchar();
+		while(!isdigit(ch)) {if (ch=='-') f=-1; ch=getchar();}
+		while(isdigit(ch)) { x=x*10+ch-'0'; ch=getchar();}
+		return x*f;
+	} 
+	ll sqr(ll a){return a*a;}
+	ll dcmp(ll x){
+		if(x>0) return 1;if(x<0) return -1;return 0;
+	}
+	class P{
+		public:
+			ll x,y;
+			P(ll x=0,ll y=0):x(x),y(y){}
+			
+			friend ll dis2(P A,P B){return sqr(A.x-B.x)+sqr(A.y-B.y);	}
+			friend ll Dot(P A,P B) {return A.x*B.x+A.y*B.y; }
+				
+			friend P operator- (P A,P B) { return P(A.x-B.x,A.y-B.y); }
+			P(P A,P B):x(B.x-A.x),y(B.y-A.y){}
+			friend P operator+ (P A,P B) { return P(A.x+B.x,A.y+B.y); }
+			friend P operator* (P A,double p) { return P(A.x*p,A.y*p); }
+			friend P operator/ (P A,double p) { return P(A.x/p,A.y/p); }
+			friend bool operator< (const P& a,const P& b) {return dcmp(a.x-b.x)<0 ||(dcmp(a.x-b.x)==0&& dcmp(a.y-b.y)<0 );}
+		}; 
+	P read_point() {
+		P a;
+		scanf("%lld%lld",&a.x,&a.y);
+		return a;	
+	} 
+	bool operator==(const P& a,const P& b) {
+		return dcmp(a.x-b.x)==0 && dcmp(a.y-b.y) == 0;
+	} 
+	typedef P V;
+	
+	ll Cross(V A,V B) {return A.x*B.y - A.y*B.x;}
+	ll Area2(P A,P B,P C) {return Cross(B-A,C-A);}
+	
+	bool OnLeft(P A,P B,P C) {
+		return Cross(B-A,C-A)>0;
+	} 
+	int Quadrant(P a)
+	{
+	    if(a.x>0&&a.y>=0) return 1;
+	    if(a.x<=0&&a.y>0) return 2;
+	    if(a.x<0&&a.y<=0) return 3;
+	    return 4;
+	}
+	P _p;
+	int cmp(P A,P B) //1:a>b 0:a<=b
+	{
+		if(Quadrant(A-_p)!=Quadrant(B-_p))
+			return Quadrant(A-_p)<Quadrant(B-_p);
+		ll tmp=Cross(V(_p,A),V(_p,B));
+		if (tmp>0) return 1;
+		else if (tmp==0) return (-(dis2(_p,A)-dis2(_p,B))>0)?1:0;
+		else return 0;
+	}
+	void PolarSort(vector<P> &v,P _p2=P(0,0)) {
+		_p=_p2;
+		sort(ALL(v),cmp);
+	}
+	
+	struct Line{
+		P p;
+		V v;
+		double ang;
+		Line(){}
+		Line(P p,V v):p(p),v(v) {ang=atan2(v.y,v.x); }
+		bool operator<(const Line & L) const {
+			return ang<L.ang;
+		}
+		P point(double a) {
+			return p+v*a;
+		}
+	};
+	bool OnLeft(Line L,P p) {
+		return Cross(L.v,p-L.p)>0;
+	} 
+	bool OnRight(Line L,P p) {
+		return Cross(L.v,p-L.p)<0;
+	} 
+	class Find6hole{
+	public:
+		
+		vector<queue< pair<pair<int,int>, int> > > q;
+		vector<pair<pair<int,int>, int> > C;
+		P _p;
+		vector<P> vp;
+		bool proceed(int i,int j) {
+//			cerr<<i<<' '<<j<<endl;
+			while(!q[i].empty() && OnLeft(Line(vp[q[i].front().fi.fi],vp[i]-vp[q[i].front().fi.fi]),vp[j])){
+			 //if k can see i && i can see j && turn)left, then k can see j
+				if (proceed(q[i].front().fi.fi,j)) return 1; // add k-j and p-k-j 
+					
+					auto now=q[i].front();
+					C[i].fi.fi=max(C[i].fi.fi,now.fi.fi);
+					C[i].fi.se=max(C[i].fi.se,now.fi.se);
+					C[i].se=max(C[i].se,now.se);
+					q[i].pop();
+			}
+			if(C[i].se!=-1 && OnLeft(Line(vp[C[i].se],vp[j]-vp[C[i].se]),_p ) ) {
+				return 1;
+			} 
+			q[j].push(mp(mp(i,C[i].fi.fi),C[i].fi.se));
+			return 0;
+		}
+		
+		bool find6hole_R(){
+			//Ci_1,Ci_2,Ci_3 Ci_j:Then chain starts in C_i, and end in i, length j
+			q.clear(); q.resize(n);
+			C.clear(); C.resize(n); 
+	
+			Rep(i,n) C[i]=mp(mp(-1,-1),-1);
+			Rep(i,n-1) {
+				if(proceed(i,i+1))return 1;
+			}
+			return 0;			
+		}
+//		bool find6hole(vector<P> _vp,P __p){
+//			vp=_vp;
+//			_p=__p;
+//			int n=vp.size();
+//			if (n<5) return 0;
+////			for(int i=0;i<n;i++){
+////				vp[i]=vp[i]-_p;
+////			}
+////			_p=P(0,0);
+//			PolarSort(vp,_p);
+//			if(find6hole_R()) return 1;
+//			for(int i=0;i<n;i++) vp[i].x*=-1,vp[i].y*=-1;
+//			PolarSort(vp,_p);
+//			if(find6hole_R()) return 1;
+//			return 0;
+//		}
+		bool find6hole(vector<P> _vp,P __p){
+			vp=_vp;
+			_p=__p;
+			int n=vp.size();
+			if (n<5) return 0;
+			for(int i=0;i<n;i++){
+				vp[i]=vp[i]-_p;
+			}
+			_p=P(0,0);
+			sort(ALL(vp),[](P p1,P p2){return atan2(p1.y,p1.x)<atan2(p2.y,p2.x);});
+			if(find6hole_R()) return true;
+			for(int i=0;i<n;i++){
+				vp[i].x*=-1;
+				vp[i].y*=-1;
+			}
+			sort(ALL(vp),[](P p1,P p2){return atan2(p1.y,p1.x)<atan2(p2.y,p2.x);});
+			if(find6hole_R()) return true;
+			return false;
+		}
+	}S;
+}
 long long tot_b=0; 
 bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
-	double ret=ahdoc::find6hole(pt,p);
+	vector<geo_ll::P> vp;
+	for(auto p:pt) {
+		vp.pb(geo_ll::P(p.x,p.y));
+	}
+	geo_ll::P _p=geo_ll::P(p.x,p.y);
+	
+	bool b=geo_ll::S.find6hole(vp,_p);
 	++tot_query_find6hole;
-	tot_b+=ret;
+	tot_b+=b;
 	if(tot_query_find6hole%1000000LL==0){
 		time_t current_t=time(NULL);
 		time(&current_t);
@@ -215,8 +415,10 @@ bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
 		}
 		cerr<<"\n";
 	}
-	return ret;
+	return b;
+	
 }
+
 
 vector<geo::P> get_range(int i,int ii,vector<pair<LL,LL>> pt){
 	geo::P A((double)radius[i],(double)radius[i]),B((double)-radius[i],(double)radius[i]),C((double)-radius[i],(double)-radius[i]),D((double)radius[i],(double)-radius[i]);
@@ -355,7 +557,7 @@ LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are
 	}
 	vector<geo::P> range=get_range(i,ii,pt); 
 	if(geo::PolygonArea(range)<geo::eps) amo=0;
-	for(LL t=1;t<=amo;t++){
+	for(LL t=1;t<=2*amo;t++){
 		geo::P _p=geo::PointPicking_Polygon(range); 
 		pair<LL,LL> p=make_pair((LL)_p.x,(LL)_p.y);
 		LL max_depthdiff=0;
@@ -369,7 +571,7 @@ LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are
 			}
 			vector<pair<LL,LL>> pt2=pt;
 			pt2.push_back(p);
-			//check_no6hole(pt2); // bruteforce
+//			check_no6hole(pt2);
 			max_depthdiff=max(max_depthdiff,dfs(i+1,lvl[i]==lvl[i+1]?ii:i+1,pt2)-i);
 			max_depth=max(max_depth,i+max_depthdiff);
 		}
@@ -399,12 +601,10 @@ void Realizer(string pat){
 }
 
 int main(){
-	//Realizer("558620");
-	//Realizer("346650");
+	Realizer("346650");
 	
-	//Realizer("333330"); //done with base=2, 1s.
-	//Realizer("3333330"); //done with base=2, 8s. 
-	Realizer("4444440");
+	//Realizer("333330"); //done with base=2, <5s.
+	//Realizer("3333330"); //done with base=2, <30s. 
 	
 	//Realizer("8730");
 	//Realizer("88510");
