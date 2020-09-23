@@ -72,13 +72,7 @@ namespace ahdoc{
 			pt[i].x=_pt[i].x-p.x;
 			pt[i].y=_pt[i].y-p.y;
 		}
-		sort(pt,pt+n,[](pair<LL,LL> p1,pair<LL,LL> p2){return atan2(p1.y,p1.x)<atan2(p2.y,p2.x);});
-		if(solve()) return true;
-		for(int i=0;i<n;i++){
-			pt[i].x=p.x-_pt[i].x;
-			pt[i].y=p.y-_pt[i].y;
-		}
-		sort(pt,pt+n,[](pair<LL,LL> p1,pair<LL,LL> p2){return atan2(p1.y,p1.x)<atan2(p2.y,p2.x);});
+		sort(pt,pt+n,[](pair<LL,LL> p1,pair<LL,LL> p2){return p1.x*p2.y-p1.y*p2.x>0;});
 		if(solve()) return true;
 		return false;
 	}
@@ -345,7 +339,7 @@ LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are
 	
 	LL max_depth=i;
 	const LL initlvl=2;
-	const LL base=10;
+	const LL base=2;
 	LL amo=1;
 	switch((lvl[i]-(lvl[i-1]!=lvl[i]))*(lvl[i-1]!=lvl[i] || lvl[i]!=lvl[i+1])){
 		case initlvl: amo=base; break;
@@ -375,7 +369,7 @@ LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are
 			}
 			vector<pair<LL,LL>> pt2=pt;
 			pt2.push_back(p);
-			//check_no6hole(pt2);
+			//check_no6hole(pt2); // bruteforce
 			max_depthdiff=max(max_depthdiff,dfs(i+1,lvl[i]==lvl[i+1]?ii:i+1,pt2)-i);
 			max_depth=max(max_depth,i+max_depthdiff);
 		}
@@ -405,14 +399,15 @@ void Realizer(string pat){
 }
 
 int main(){
+	//Realizer("558620");
 	//Realizer("346650");
 	
-	//Realizer("333330"); //done with base=2, <5s.
-	//Realizer("3333330"); //done with base=2, <30s. 
+	//Realizer("333330"); //done with base=2, 1s.
+	//Realizer("3333330"); //done with base=2, 8s. 
 	
-	//Realizer("8730");
+	Realizer("8730");
 	//Realizer("88510");
-	Realizer("3477710");
+	//Realizer("3477710");
 	
 	//check({{0,0},{59,-35},{-99,81},{-77,6},{16,-87},{96,-82}});
 	//cout<<ahdoc::find6hole({{0,0},{59,-35},{-99,81},{-77,6},{16,-87},{96,-82}},{92,-73})<<"\n";
