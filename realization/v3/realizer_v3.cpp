@@ -203,7 +203,7 @@ bool on_the_line(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return crossproduct(
 bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
 	double ret=ahdoc::find6hole(pt,p);
 	++tot_query_find6hole;
-	if(tot_query_find6hole%1000000LL==0){
+	if(tot_query_find6hole%10000000LL==0){
 		cerr<<"tot_query_find6hole = "<<tot_query_find6hole<<" & tot_query_check = "<<tot_query_check<<":";
 		for(int j=1;j<=30;j++){
 			if(achievement[j]==0) break;
@@ -336,7 +336,7 @@ LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are
 	
 	LL max_depth=i;
 	const LL initlvl=2;
-	const LL base=5;
+	const LL base=10;
 	LL amo=1;
 	switch((lvl[i]-(lvl[i-1]!=lvl[i]))*(lvl[i-1]!=lvl[i] || lvl[i]!=lvl[i+1])){
 		case initlvl: amo=base; break;
@@ -401,9 +401,9 @@ int main(){
 	//Realizer("333330"); //done with base=2, <5s.
 	//Realizer("3333330"); //done with base=2, <30s. 
 	
-	Realizer("8730");
+	//Realizer("8730");
 	//Realizer("88510");
-	//Realizer("3477710");
+	Realizer("3477710");
 	
 	//check({{0,0},{59,-35},{-99,81},{-77,6},{16,-87},{96,-82}});
 	//cout<<ahdoc::find6hole({{0,0},{59,-35},{-99,81},{-77,6},{16,-87},{96,-82}},{92,-73})<<"\n";
