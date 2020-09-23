@@ -352,46 +352,46 @@ namespace geo_ll{
 			Rep(i,n-1) {
 				if(proceed(i,i+1))return 1;
 			}
-			
-		}
-		bool find6hole(vector<P> _vp,P __p){
-			vp=_vp;
-			_p=__p;
-			int n=vp.size();
-			if (n<5) return 0;
-//			for(int i=0;i<n;i++){
-//				vp[i]=vp[i]-_p;
-//			}
-//			_p=P(0,0);
-			PolarSort(vp,_p);
-			if(find6hole_R()) return 1;
-			for(int i=0;i<n;i++) vp[i].x*=-1,vp[i].y*=-1;
-			PolarSort(vp,_p);
-			if(find6hole_R()) return 1;
-			return 0;
+			return 0;			
 		}
 //		bool find6hole(vector<P> _vp,P __p){
 //			vp=_vp;
 //			_p=__p;
 //			int n=vp.size();
 //			if (n<5) return 0;
-//			for(int i=0;i<n;i++){
-//				vp[i]=vp[i]-_p;
-//			}
-//			_p=P(0,0);
+////			for(int i=0;i<n;i++){
+////				vp[i]=vp[i]-_p;
+////			}
+////			_p=P(0,0);
 //			PolarSort(vp,_p);
-//			if(find6hole_R()) return true;
-//			for(int i=0;i<n;i++){
-//				vp[i].x*=-1;
-//				vp[i].y*=-1;
-//			}
+//			if(find6hole_R()) return 1;
+//			for(int i=0;i<n;i++) vp[i].x*=-1,vp[i].y*=-1;
 //			PolarSort(vp,_p);
-//			if(find6hole_R()) return true;
-//			return false;
+//			if(find6hole_R()) return 1;
+//			return 0;
 //		}
+		bool find6hole(vector<P> _vp,P __p){
+			vp=_vp;
+			_p=__p;
+			int n=vp.size();
+			if (n<5) return 0;
+			for(int i=0;i<n;i++){
+				vp[i]=vp[i]-_p;
+			}
+			_p=P(0,0);
+			sort(ALL(vp),[](P p1,P p2){return atan2(p1.y,p1.x)<atan2(p2.y,p2.x);});
+			if(find6hole_R()) return true;
+			for(int i=0;i<n;i++){
+				vp[i].x*=-1;
+				vp[i].y*=-1;
+			}
+			sort(ALL(vp),[](P p1,P p2){return atan2(p1.y,p1.x)<atan2(p2.y,p2.x);});
+			if(find6hole_R()) return true;
+			return false;
+		}
 	}S;
 }
-
+long long tot_b=0; 
 bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
 	vector<geo_ll::P> vp;
 	for(auto p:pt) {
@@ -401,10 +401,12 @@ bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
 	
 	bool b=geo_ll::S.find6hole(vp,_p);
 	++tot_query_find6hole;
+	tot_b+=b;
 	if(tot_query_find6hole%1000000LL==0){
 		time_t current_t=time(NULL);
 		time(&current_t);
 		cerr<<"time:"<<ctime(&current_t)<<endl;
+		cerr<<"tot_6holes:"<<tot_b<<endl;
 		cerr<<"tot_query_find6hole = "<<tot_query_find6hole<<" & tot_query_check = "<<tot_query_check<<":";
 		for(int j=1;j<=30;j++){
 			if(achievement[j]==0) break;

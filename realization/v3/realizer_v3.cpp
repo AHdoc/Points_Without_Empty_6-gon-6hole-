@@ -203,10 +203,16 @@ LL crossproduct(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c,pair<LL,LL> d){return 
 bool on_the_left(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return crossproduct(a,b,c)>0;}
 bool on_the_line(pair<LL,LL> a,pair<LL,LL> b,pair<LL,LL> c){return crossproduct(a,b,c)==0;}
 
+long long tot_b=0; 
 bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
 	double ret=ahdoc::find6hole(pt,p);
 	++tot_query_find6hole;
-	if(tot_query_find6hole%10000000LL==0){
+	tot_b+=ret;
+	if(tot_query_find6hole%1000000LL==0){
+		time_t current_t=time(NULL);
+		time(&current_t);
+		cerr<<"time:"<<ctime(&current_t)<<endl;
+		cerr<<"tot_6holes:"<<tot_b<<endl;
 		cerr<<"tot_query_find6hole = "<<tot_query_find6hole<<" & tot_query_check = "<<tot_query_check<<":";
 		for(int j=1;j<=30;j++){
 			if(achievement[j]==0) break;
