@@ -595,7 +595,7 @@ LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are
 			}
 			vector<pair<LL,LL>> pt2=pt;
 			pt2.push_back(p);
-//			check_no6hole(pt2);
+			check_no6hole(pt2);
 			max_depthdiff=max(max_depthdiff,dfs(i+1,lvl[i]==lvl[i+1]?ii:i+1,pt2)-i);
 			max_depth=max(max_depth,i+max_depthdiff);
 		}
