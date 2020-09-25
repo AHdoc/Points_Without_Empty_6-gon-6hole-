@@ -320,26 +320,30 @@ namespace geo_ll{
 	class Find6hole{
 	public:
 		int n;
-		vector<queue< pair<pair<int,int>, int> > > q;
-		vector<pair<pair<int,int>, int> > C;
+		#define MAXN (31)
+
+		pair<pair<int,int>, int>  q[MAXN][MAXN];
+		pair<pair<int,int>, int>  C[MAXN];
+		int q_h[MAXN],q_t[MAXN];
 		P _p;
 		vector<P> vp;
+		
 		bool proceed(int i,int j) {
 //			cerr<<i<<' '<<j<<endl;
-			while(!q[i].empty() && OnLeft(Line(vp[q[i].front().fi.fi],vp[i]-vp[q[i].front().fi.fi]),vp[j])){
+			while(q_h[i]<=q_t[i] && OnLeft(Line(vp[q[i][q_h[i]].fi.fi],vp[i]-vp[q[i][q_h[i]].fi.fi]),vp[j])){
 			 //if k can see i && i can see j && turn)left, then k can see j
-				if (proceed(q[i].front().fi.fi,j)) return 1; // add k-j and p-k-j 
+				if (proceed(q[i][q_h[i]].fi.fi,j)) return 1; // add k-j and p-k-j 
 					
-					auto now=q[i].front();
+					auto now=q[i][q_h[i]];
 					C[i].fi.fi=max(C[i].fi.fi,now.fi.fi);
 					C[i].fi.se=max(C[i].fi.se,now.fi.se);
 					C[i].se=max(C[i].se,now.se);
-					q[i].pop();
+					q_h[i]++;
 			}
 			if(C[i].se!=-1 && OnLeft(Line(vp[C[i].se],vp[j]-vp[C[i].se]),_p ) ) {
 				return 1;
 			} 
-			q[j].push(mp(mp(i,C[i].fi.fi),C[i].fi.se));
+			q[j][++q_t[j]]=(mp(mp(i,C[i].fi.fi),C[i].fi.se));
 			return 0;
 		}
 //		
@@ -366,10 +370,9 @@ namespace geo_ll{
 //		}
 		bool find6hole_R(){
 			//Ci_1,Ci_2,Ci_3 Ci_j:Then chain starts in C_i, and end in i, length j
-			q.clear(); q.resize(n);
-			C.clear(); C.resize(n); 
 //			cout<<n<<endl;
 			Rep(i,n) C[i]=mp(mp(-1,-1),-1);
+			Rep(i,n) q_h[i]=0,q_t[i]=-1;
 			Rep(i,n-1) {
 				if(proceed(i,i+1))return 1;
 			}
