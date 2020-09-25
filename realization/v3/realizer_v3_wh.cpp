@@ -251,8 +251,8 @@ namespace geo_ll{
 			P(ll x=0,ll y=0):x(x),y(y){}
 			
 			friend ll dis2(P A,P B){return sqr(A.x-B.x)+sqr(A.y-B.y);	}
+			friend ll dis2(P A){return sqr(A.x)+sqr(A.y);	}
 			friend ll Dot(P A,P B) {return A.x*B.x+A.y*B.y; }
-				
 			friend P operator- (P A,P B) { return P(A.x-B.x,A.y-B.y); }
 			P(P A,P B):x(B.x-A.x),y(B.y-A.y){}
 			friend P operator+ (P A,P B) { return P(A.x+B.x,A.y+B.y); }
@@ -297,6 +297,17 @@ namespace geo_ll{
 		_p=_p2;
 		sort(ALL(v),cmp);
 	}
+
+	int cmp_O(P A,P B) //1:a>b 0:a<=b
+	{
+		
+		if(Quadrant(A)!=Quadrant(B))
+			return Quadrant(A)<Quadrant(B);
+		ll tmp=Cross(A,B);
+		if (tmp>0) return 1;
+		else if (tmp==0) return (-(dis2(A)-dis2(B))>0)?1:0;
+		else return 0;
+	}
 	
 	struct Line{
 		P p;
@@ -326,7 +337,7 @@ namespace geo_ll{
 		pair<pair<int,int>, int>  C[MAXN];
 		int q_h[MAXN],q_t[MAXN];
 		P _p;
-		vector<P> vp;
+		P vp[MAXN];
 		
 		bool proceed(int i,int j) {
 //			cerr<<i<<' '<<j<<endl;
@@ -395,15 +406,15 @@ namespace geo_ll{
 //			return 0;
 //		}
 		bool find6hole(vector<P> _vp,P __p){
-			vp=_vp;
 			_p=__p;
-			n=vp.size();
+			n=_vp.size();
 			if (n<5) return 0;
 			for(int i=0;i<n;i++){
-				vp[i]=vp[i]-_p;
+				vp[i]=_vp[i]-_p;
 			}
 			_p=P(0,0);
-			PolarSort(vp,_p);
+			sort(vp,vp+n,cmp_O);
+//			PolarSort(vp,_p);
 			if(find6hole_R()) return 1;
 //			int ans=-1,l=1,r=n-1;
 //			while(l<=r) {
