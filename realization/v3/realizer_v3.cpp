@@ -339,7 +339,7 @@ LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are
 	
 	LL max_depth=i;
 	const LL initlvl=2;
-	const LL base=2;
+	const LL base=10;
 	LL amo=1;
 	switch((lvl[i]-(lvl[i-1]!=lvl[i]))*(lvl[i-1]!=lvl[i] || lvl[i]!=lvl[i+1])){
 		case initlvl: amo=base; break;
@@ -404,8 +404,9 @@ int main(){
 	
 	//Realizer("333330"); //done with base=2, 1s.
 	//Realizer("3333330"); //done with base=2, 8s. 
+	Realizer("4444440");
 	
-	Realizer("8730");
+	//Realizer("8730");
 	//Realizer("88510");
 	//Realizer("3477710");
 	
