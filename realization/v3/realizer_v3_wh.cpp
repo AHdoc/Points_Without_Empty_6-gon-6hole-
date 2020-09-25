@@ -64,7 +64,7 @@ namespace ahdoc{
 	}
 	
 	bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
-		int n=pt.size();
+		int n=pt.size();if (n<5) return 0;
 		for(int i=0;i<n;i++){
 			pt[i].x-=p.x;
 			pt[i].y-=p.y;
@@ -319,98 +319,100 @@ namespace geo_ll{
 	} 
 	class Find6hole{
 	public:
-		
+		int n;
 		vector<queue< pair<pair<int,int>, int> > > q;
 		vector<pair<pair<int,int>, int> > C;
 		P _p;
 		vector<P> vp;
-//		bool proceed(int i,int j) {
-////			cerr<<i<<' '<<j<<endl;
-//			while(!q[i].empty() && OnLeft(Line(vp[q[i].front().fi.fi],vp[i]-vp[q[i].front().fi.fi]),vp[j])){
-//			 //if k can see i && i can see j && turn)left, then k can see j
-//				if (proceed(q[i].front().fi.fi,j)) return 1; // add k-j and p-k-j 
-//					
-//					auto now=q[i].front();
-//					C[i].fi.fi=max(C[i].fi.fi,now.fi.fi);
-//					C[i].fi.se=max(C[i].fi.se,now.fi.se);
-//					C[i].se=max(C[i].se,now.se);
-//					q[i].pop();
-//			}
-//			if(C[i].se!=-1 && OnLeft(Line(vp[C[i].se],vp[j]-vp[C[i].se]),_p ) ) {
-//				return 1;
-//			} 
-//			q[j].push(mp(mp(i,C[i].fi.fi),C[i].fi.se));
-//			return 0;
-//		}
-//		
-		bool proceed(int i,int j){
-			//cerr<<">   i="<<i<<"   j="<<j<<"\n";
-			while(!q[i].empty() && OnLeft(vp[q[i].front().fi.fi],vp[i],vp[j])){
-				if(proceed(q[i].front().fi.fi,j)) return true;
-				auto tmp=q[i].front();
-				if(tmp.c1>C[i].c1) C[i].c1=tmp.c1;
-				if(tmp.c2>C[i].c2) C[i].c2=tmp.c2;
-				if(tmp.c3>C[i].c3) C[i].c3=tmp.c3;
-				q[i].pop();
+		bool proceed(int i,int j) {
+//			cerr<<i<<' '<<j<<endl;
+			while(!q[i].empty() && OnLeft(Line(vp[q[i].front().fi.fi],vp[i]-vp[q[i].front().fi.fi]),vp[j])){
+			 //if k can see i && i can see j && turn)left, then k can see j
+				if (proceed(q[i].front().fi.fi,j)) return 1; // add k-j and p-k-j 
+					
+					auto now=q[i].front();
+					C[i].fi.fi=max(C[i].fi.fi,now.fi.fi);
+					C[i].fi.se=max(C[i].fi.se,now.fi.se);
+					C[i].se=max(C[i].se,now.se);
+					q[i].pop();
 			}
-			if(C[i].c3!=-1 && OnLeft(vp[C[i].c3],vp[j],P(0LL,0LL))) return true;
-			q[j].push(mp( mp(i,C[i].c1),C[i].c2));
-			//cerr<<"<   i="<<i<<"   j="<<j<<"\n";
-			//for(int k=0;k<pt.size();k++){
-			//	cerr<<"       Q["<<k<<"]={ ";
-			//	for(auto x:Q[k]) cerr<<"("<<x.c1<<","<<x.c2<<","<<x.c3<<") ";
-			//	cerr<<"}\n";
-			//	cerr<<"       C["<<k<<"]=("<<C[k].c1<<","<<C[k].c2<<","<<C[k].c3<<")\n";
-			//}
-			return false;
+			if(C[i].se!=-1 && OnLeft(Line(vp[C[i].se],vp[j]-vp[C[i].se]),_p ) ) {
+				return 1;
+			} 
+			q[j].push(mp(mp(i,C[i].fi.fi),C[i].fi.se));
+			return 0;
 		}
-	
+//		
+//		bool proceed(int i,int j){
+//			//cerr<<">   i="<<i<<"   j="<<j<<"\n";
+//			while(!q[i].empty() && OnLeft(vp[q[i].front().fi.fi],vp[i],vp[j])){
+//				if(proceed(q[i].front().fi.fi,j)) return true;
+//				auto tmp=q[i].front();
+//				if(tmp.c1>C[i].c1) C[i].c1=tmp.c1;
+//				if(tmp.c2>C[i].c2) C[i].c2=tmp.c2;
+//				if(tmp.c3>C[i].c3) C[i].c3=tmp.c3;
+//				q[i].pop();
+//			}
+//			if(C[i].c3!=-1 && OnLeft(vp[C[i].c3],vp[j],P(0LL,0LL))) return true;
+//			q[j].push(mp( mp(i,C[i].c1),C[i].c2));
+//			//cerr<<"<   i="<<i<<"   j="<<j<<"\n";
+//			//for(int k=0;k<pt.size();k++){
+//			//	cerr<<"       Q["<<k<<"]={ ";
+//			//	for(auto x:Q[k]) cerr<<"("<<x.c1<<","<<x.c2<<","<<x.c3<<") ";
+//			//	cerr<<"}\n";
+//			//	cerr<<"       C["<<k<<"]=("<<C[k].c1<<","<<C[k].c2<<","<<C[k].c3<<")\n";
+//			//}
+//			return false;
+//		}
 		bool find6hole_R(){
 			//Ci_1,Ci_2,Ci_3 Ci_j:Then chain starts in C_i, and end in i, length j
 			q.clear(); q.resize(n);
 			C.clear(); C.resize(n); 
-	
+//			cout<<n<<endl;
 			Rep(i,n) C[i]=mp(mp(-1,-1),-1);
 			Rep(i,n-1) {
 				if(proceed(i,i+1))return 1;
 			}
 			return 0;			
 		}
+//		bool find6hole(vector<P> _vp,P __p){
+//			vp=_vp;
+//			_p=__p;
+//			n=vp.size();
+//			if (n<5) return 0; 
+//			for(int i=0;i<n;i++){
+//				vp[i]=vp[i]-_p;
+//			}
+//			_p=P(0,0);
+//			PolarSort(vp,_p);
+//			if(find6hole_R()) return 1;
+//			for(int i=0;i<n;i++) vp[i].x*=-1,vp[i].y*=-1;
+//			PolarSort(vp,_p);
+//			if(find6hole_R()) return 1;
+//			return 0;
+//		}
 		bool find6hole(vector<P> _vp,P __p){
 			vp=_vp;
 			_p=__p;
-			int n=vp.size();
-			if (n<5) return 0; 
+			n=vp.size();
+			if (n<5) return 0;
 			for(int i=0;i<n;i++){
 				vp[i]=vp[i]-_p;
 			}
 			_p=P(0,0);
 			PolarSort(vp,_p);
 			if(find6hole_R()) return 1;
-			for(int i=0;i<n;i++) vp[i].x*=-1,vp[i].y*=-1;
-			PolarSort(vp,_p);
-			if(find6hole_R()) return 1;
+//			int ans=-1,l=1,r=n-1;
+//			while(l<=r) {
+//				int m=l+r>>1;
+//				if(Quadrant(vp[m])>=3) ans=m,l=m+1;else r=m-1;
+//			}
+//			if(ans!=-1){
+//				rotate(vp.begin(),vp.begin()+ans,vp.end());
+//				return find6hole_R();
+//			}
 			return 0;
 		}
-//		bool find6hole(vector<P> _vp,P __p){
-//			vp=_vp;
-//			_p=__p;
-//			int n=vp.size();
-////			if (n<5) return 0;
-//			for(int i=0;i<n;i++){
-//				vp[i]=vp[i]-_p;
-//			}
-//			_p=P(0,0);
-//			PolarSort(vp,_p);
-//			if(find6hole_R()) return true;
-//			for(int i=0;i<n;i++){
-//				vp[i].x*=-1;
-//				vp[i].y*=-1;
-//			}
-//			PolarSort(vp,_p);
-//			if(find6hole_R()) return true;
-//			return false;
-//		}
 	}S;
 }
 long long tot_b=0; 
@@ -595,7 +597,7 @@ LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are
 			}
 			vector<pair<LL,LL>> pt2=pt;
 			pt2.push_back(p);
-			check_no6hole(pt2);
+//			check_no6hole(pt2);
 			max_depthdiff=max(max_depthdiff,dfs(i+1,lvl[i]==lvl[i+1]?ii:i+1,pt2)-i);
 			max_depth=max(max_depth,i+max_depthdiff);
 		}
