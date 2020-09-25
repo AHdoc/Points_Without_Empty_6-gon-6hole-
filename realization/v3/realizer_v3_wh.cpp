@@ -324,25 +324,47 @@ namespace geo_ll{
 		vector<pair<pair<int,int>, int> > C;
 		P _p;
 		vector<P> vp;
-		bool proceed(int i,int j) {
-//			cerr<<i<<' '<<j<<endl;
-			while(!q[i].empty() && OnLeft(Line(vp[q[i].front().fi.fi],vp[i]-vp[q[i].front().fi.fi]),vp[j])){
-			 //if k can see i && i can see j && turn)left, then k can see j
-				if (proceed(q[i].front().fi.fi,j)) return 1; // add k-j and p-k-j 
-					
-					auto now=q[i].front();
-					C[i].fi.fi=max(C[i].fi.fi,now.fi.fi);
-					C[i].fi.se=max(C[i].fi.se,now.fi.se);
-					C[i].se=max(C[i].se,now.se);
-					q[i].pop();
+//		bool proceed(int i,int j) {
+////			cerr<<i<<' '<<j<<endl;
+//			while(!q[i].empty() && OnLeft(Line(vp[q[i].front().fi.fi],vp[i]-vp[q[i].front().fi.fi]),vp[j])){
+//			 //if k can see i && i can see j && turn)left, then k can see j
+//				if (proceed(q[i].front().fi.fi,j)) return 1; // add k-j and p-k-j 
+//					
+//					auto now=q[i].front();
+//					C[i].fi.fi=max(C[i].fi.fi,now.fi.fi);
+//					C[i].fi.se=max(C[i].fi.se,now.fi.se);
+//					C[i].se=max(C[i].se,now.se);
+//					q[i].pop();
+//			}
+//			if(C[i].se!=-1 && OnLeft(Line(vp[C[i].se],vp[j]-vp[C[i].se]),_p ) ) {
+//				return 1;
+//			} 
+//			q[j].push(mp(mp(i,C[i].fi.fi),C[i].fi.se));
+//			return 0;
+//		}
+//		
+		bool proceed(int i,int j){
+			//cerr<<">   i="<<i<<"   j="<<j<<"\n";
+			while(!q[i].empty() && OnLeft(vp[q[i].front().fi.fi],vp[i],vp[j])){
+				if(proceed(q[i].front().fi.fi,j)) return true;
+				auto tmp=q[i].front();
+				if(tmp.c1>C[i].c1) C[i].c1=tmp.c1;
+				if(tmp.c2>C[i].c2) C[i].c2=tmp.c2;
+				if(tmp.c3>C[i].c3) C[i].c3=tmp.c3;
+				q[i].pop();
 			}
-			if(C[i].se!=-1 && OnLeft(Line(vp[C[i].se],vp[j]-vp[C[i].se]),_p ) ) {
-				return 1;
-			} 
-			q[j].push(mp(mp(i,C[i].fi.fi),C[i].fi.se));
-			return 0;
+			if(C[i].c3!=-1 && OnLeft(vp[C[i].c3],vp[j],P(0LL,0LL))) return true;
+			q[j].push(mp( mp(i,C[i].c1),C[i].c2));
+			//cerr<<"<   i="<<i<<"   j="<<j<<"\n";
+			//for(int k=0;k<pt.size();k++){
+			//	cerr<<"       Q["<<k<<"]={ ";
+			//	for(auto x:Q[k]) cerr<<"("<<x.c1<<","<<x.c2<<","<<x.c3<<") ";
+			//	cerr<<"}\n";
+			//	cerr<<"       C["<<k<<"]=("<<C[k].c1<<","<<C[k].c2<<","<<C[k].c3<<")\n";
+			//}
+			return false;
 		}
-		
+	
 		bool find6hole_R(){
 			//Ci_1,Ci_2,Ci_3 Ci_j:Then chain starts in C_i, and end in i, length j
 			q.clear(); q.resize(n);
@@ -354,41 +376,41 @@ namespace geo_ll{
 			}
 			return 0;			
 		}
-//		bool find6hole(vector<P> _vp,P __p){
-//			vp=_vp;
-//			_p=__p;
-//			int n=vp.size();
-//			if (n<5) return 0;
-////			for(int i=0;i<n;i++){
-////				vp[i]=vp[i]-_p;
-////			}
-////			_p=P(0,0);
-//			PolarSort(vp,_p);
-//			if(find6hole_R()) return 1;
-//			for(int i=0;i<n;i++) vp[i].x*=-1,vp[i].y*=-1;
-//			PolarSort(vp,_p);
-//			if(find6hole_R()) return 1;
-//			return 0;
-//		}
 		bool find6hole(vector<P> _vp,P __p){
 			vp=_vp;
 			_p=__p;
 			int n=vp.size();
-			if (n<5) return 0;
+			if (n<5) return 0; 
 			for(int i=0;i<n;i++){
 				vp[i]=vp[i]-_p;
 			}
 			_p=P(0,0);
-			sort(ALL(vp),[](P p1,P p2){return atan2(p1.y,p1.x)<atan2(p2.y,p2.x);});
-			if(find6hole_R()) return true;
-			for(int i=0;i<n;i++){
-				vp[i].x*=-1;
-				vp[i].y*=-1;
-			}
-			sort(ALL(vp),[](P p1,P p2){return atan2(p1.y,p1.x)<atan2(p2.y,p2.x);});
-			if(find6hole_R()) return true;
-			return false;
+			PolarSort(vp,_p);
+			if(find6hole_R()) return 1;
+			for(int i=0;i<n;i++) vp[i].x*=-1,vp[i].y*=-1;
+			PolarSort(vp,_p);
+			if(find6hole_R()) return 1;
+			return 0;
 		}
+//		bool find6hole(vector<P> _vp,P __p){
+//			vp=_vp;
+//			_p=__p;
+//			int n=vp.size();
+////			if (n<5) return 0;
+//			for(int i=0;i<n;i++){
+//				vp[i]=vp[i]-_p;
+//			}
+//			_p=P(0,0);
+//			PolarSort(vp,_p);
+//			if(find6hole_R()) return true;
+//			for(int i=0;i<n;i++){
+//				vp[i].x*=-1;
+//				vp[i].y*=-1;
+//			}
+//			PolarSort(vp,_p);
+//			if(find6hole_R()) return true;
+//			return false;
+//		}
 	}S;
 }
 long long tot_b=0; 
@@ -400,6 +422,8 @@ bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
 	geo_ll::P _p=geo_ll::P(p.x,p.y);
 	
 	bool b=geo_ll::S.find6hole(vp,_p);
+	
+//	bool b=ahdoc::find6hole(pt,p);
 	++tot_query_find6hole;
 	tot_b+=b;
 	if(tot_query_find6hole%1000000LL==0){
