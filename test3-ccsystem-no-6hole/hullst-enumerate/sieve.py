@@ -19,8 +19,8 @@ def check(f_filename, g_filename):
         
         if chk:
             cnt[ord(s[0])-ord('0')] += 1
-            if '25' in g_filename and s.startswith('6'):
-                print(s)
+            #if '25' in g_filename and s.startswith('6'):
+            #    print(s)
     
     for i in range(3,9):
         print(str(i)+':'+str(cnt[i]), end='   ')
