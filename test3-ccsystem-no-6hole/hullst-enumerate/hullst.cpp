@@ -31,10 +31,10 @@ void dfs(int tot,int n,string s,bool smallest_hulls,bool hulls_with_obstacle,int
 }
 
 int main(){
-	freopen("n_g_24_le_27_startswith(6).txt","w",stdout);
-	int st=6;
+	freopen("n_g_24_le_27_startswith(5).txt","w",stdout);
+	int st=5;
 	cnt=0;
-	for(int n=25;n<=27;n++){
+	for(int n=25;n<=30;n++){
 		if(n<=27) dfs(n,n,"",true,true,st);
 		else dfs(n,n,"",true,false,st);
 	}

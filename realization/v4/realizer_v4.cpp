@@ -196,7 +196,7 @@ bool find6hole(vector<pair<LL,LL>> pt,pair<LL,LL> p){
 	double ret=ahdoc::find6hole(pt,p);
 	++tot_query_find6hole;
 	tot_b+=ret;
-	if(tot_query_find6hole%1000000LL==0){
+	if(tot_query_find6hole%10000000LL==0){
 		time_t current_t=time(NULL);
 		time(&current_t);
 		cerr<<"time:"<<ctime(&current_t)<<endl;
@@ -333,6 +333,7 @@ LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are
 	
 	LL max_depth=i;
 	const LL base=1;
+	const LL multi=1000;
 	
 	vector<geo::P> range=get_range(i,ii,pt); 
 	double area=geo::PolygonArea(range);
@@ -340,14 +341,15 @@ LL dfs(int i,int ii,vector<pair<LL,LL>> pt){ // points numbered from ii to i are
 	
 	vector<pair<LL,LL>> pt2;
 	
-	for(LL t1=1,t2=1;t1<=base && t2<=base;t2++){
+	for(LL t1=1,t2=1;t1<=base && t2<=multi*base;t2++){
 		geo::P _p=geo::PointPicking_Polygon(range); 
 		pair<LL,LL> p=make_pair((LL)_p.x,(LL)_p.y),p2;
 		
 		LL now_depth;
-		if(!check(i,ii,pt,p))
+		if(!check(i,ii,pt,p)){
 			now_depth=i;
-		else{
+			continue; 
+		}else{
 			++t1;
 			pt2=pt;
 			pt2.push_back(p);
@@ -410,7 +412,7 @@ int main(){
 	//Realizer("558620");
 	//Realizer("346650");
 	
-	//Realizer("333330"); //done with base=1, 1s.
+	//Realizer("333330"); //done with base=1, multi=100 + check, 10s.
 	//Realizer("3333330"); //done with base=1, 2s. 
 	//Realizer("4444440");
 	
